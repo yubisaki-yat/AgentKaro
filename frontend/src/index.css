@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-primary: #6366f1;
+  --color-brand-secondary: #8b5cf6;
+  --color-brand-accent: #ec4899;
+  --color-bg-dark: #0a0d14;
+  --color-card-dark: #0f172a;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-none;
+  }
+  
+  .premium-gradient {
+    @apply bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500;
+  }
+
+  .log-terminal {
+    @apply bg-[#050810] border border-slate-800 rounded-xl p-4 font-mono text-sm text-[#a8d672] overflow-y-auto;
+  }
+}

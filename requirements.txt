@@ -1,0 +1,14 @@
+undetected-chromedriver
+selenium
+selenium-stealth
+pandas
+openpyxl
+python-dotenv
+fastapi
+uvicorn
+pydantic
+pymupdf
+python-docx
+rake-nltk
+sqlalchemy
+razorpay
