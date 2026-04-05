@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     lsb-release \
     libnss3 \
-    libgconf-2-4 \
     libasound2 \
     libatk1.0-0 \
     libc6 \
@@ -18,7 +17,6 @@ RUN apt-get update && apt-get install -y \
     libdbus-1-3 \
     libexpat1 \
     libfontconfig1 \
-    libgcc1 \
     libgdk-pixbuf2.0-0 \
     libglib2.0-0 \
     libgtk-3-0 \
@@ -41,7 +39,6 @@ RUN apt-get update && apt-get install -y \
     libxtst6 \
     ca-certificates \
     fonts-liberation \
-    libappindicator1 \
     xdg-utils \
     --no-install-recommends
 
