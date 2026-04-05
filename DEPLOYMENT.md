@@ -39,7 +39,7 @@ Since the bots require **Selenium/Chrome**, you **MUST** deploy using **Docker**
 
 1.  **New Web Service**: In Render Dashboard, click **"New"** -> **"Web Service"**.
 2.  **Repository**: Connect your GitHub repository (`AgentKaro`).
-3.  **Runtime**: Select **"Docker"**. Render will automatically find the `Dockerfile` I created.
+3.  **Runtime**: Select **"Docker"** (Do not select Python). Render will automatically find the `Dockerfile` in the repository.
 4.  **Environment Variables**: Add the following keys under the **"Environment"** tab:
     - `MONGO_URI`: (Your MongoDB Atlas string)
     - `RAZORPAY_KEY_ID`: (Your Razorpay ID)
@@ -54,9 +54,10 @@ Since the bots require **Selenium/Chrome**, you **MUST** deploy using **Docker**
 
 1.  **New Static Site**: Click **"New"** -> **"Static Site"**.
 2.  **Repository**: Connect the same GitHub repository.
-3.  **Build Settings**:
-    - **Build Command**: `cd frontend && npm install && npm run build`
-    - **Publish Directory**: `frontend/dist`
+3.  **Build Settings** (⚠️ **IMPORTANT**):
+    - **Root Directory**: `frontend` *(Do this so it doesn't mistakenly try to build the Python backend!)*
+    - **Build Command**: `npm install && npm run build`
+    - **Publish Directory**: `dist`
 4.  **Environment Variables**: Add:
     - `VITE_API_URL`: (The URL of your **Backend Web Service** on Render, e.g., `https://agentkaro-backend.onrender.com/api`)
 5.  **Deploy**: Click **"Create Static Site"**.
@@ -85,8 +86,15 @@ Since the bots require **Selenium/Chrome**, you **MUST** deploy using **Docker**
 
 ---
 
+## 🛠️ Common Errors & Troubleshooting
+
+- **`bash: line 1: added:: command not found`**: You will get this if you accidentally copy the word `added:` or any other random text into the `Build Command` or into an `Environment Variable` key. **Ensure your Build Command is EXACTLY `npm install && npm run build`** with nothing extra pasted in the box.
+- **Python / Pip installing on Frontend**: If Render starts installing `uvicorn`, `fastapi`, and other Python packages while deploying the Frontend Static Site, it means you forgot to set the **Root Directory** to `frontend`. It's detecting the `requirements.txt` in the root and acting as a Python app.
+
+---
+
 ### Step-by-Step Summary:
 1.  **Register accounts** for MongoDB Atlas, Razorpay, and Render.
-2.  **Add secrets** to your private `.env` (already pushed to git? NO - I excluded it for security).
-3.  **Push code** to GitHub.
-4.  **Connect to Render** and set up the services with the environment variables listed above.
+2.  **Push your latest code** to GitHub.
+3.  **Deploy Backend on Render**: Create a new Web Service, choose Docker Runtime, and set the environment variables.
+4.  **Deploy Frontend on Render**: Create a new Static Site, set **Root Directory** to `frontend`, set **Build Command** to `npm install && npm run build`, and link `VITE_API_URL` to your backend URL.
