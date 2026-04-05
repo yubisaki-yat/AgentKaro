@@ -11,11 +11,10 @@ pydantic
 pymupdf
 python-docx
 rake-nltk
-sqlalchemy
 razorpay
-motor
-pymongo
 httpx
 google-auth
 passlib[argon2]
 python-multipart
+supabase
+certifi
