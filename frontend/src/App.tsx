@@ -123,9 +123,18 @@ const App: React.FC = () => {
         setSyncSuccess(false);
         setPassword("");
       }, 1500);
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { detail?: string } } };
-      setErrorHeader(error.response?.data?.detail || "Auth failed. Check credentials.");
+    } catch (err: any) {
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail;
+      const message = err.message;
+
+      if (status === 404) {
+        setErrorHeader(`API Error (404): Endpoint not found at ${API_BASE}`);
+      } else if (status === 500) {
+        setErrorHeader("Server Error (500): Connection failed to MongoDB or Backend.");
+      } else {
+        setErrorHeader(detail || `Auth failed: ${message}`);
+      }
       setIdentifying(false);
     }
   };
@@ -149,8 +158,14 @@ const App: React.FC = () => {
         setIdentifying(false);
         setSyncSuccess(false);
       }, 1500);
-    } catch {
-      setErrorHeader("Google login failed.");
+    } catch (err: any) {
+      const status = err.response?.status;
+      const message = err.message;
+      if (status === 404) {
+        setErrorHeader(`Google login failed (404): Endpoint missing at ${API_BASE}`);
+      } else {
+        setErrorHeader(`Google login failed: ${message}`);
+      }
       setIdentifying(false);
     }
   };
