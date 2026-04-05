@@ -3,7 +3,8 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Save, User, Lock, Briefcase, Globe, Info, CheckCircle, Clock, FileText } from 'lucide-react';
 
-const API_BASE = "http://localhost:8000/api";
+import API_BASE from '../config';
+
 
 interface SettingsProps {
   email: string;

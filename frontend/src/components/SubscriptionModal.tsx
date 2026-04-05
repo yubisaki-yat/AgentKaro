@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, Zap, Crown, ShieldCheck } from 'lucide-react';
+import API_BASE from '../config';
+
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -51,12 +53,12 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
     setLoading(true);
     try {
       // 0. Get Config
-      const configRes = await fetch('/api/config');
+      const configRes = await fetch(`${API_BASE}/config`);
       const configData = await configRes.json();
       const razorpayKey = configData.razorpay_key;
 
       // 1. Create Order
-      const res = await fetch('/api/create-order', {
+      const res = await fetch(`${API_BASE}/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId, email })
@@ -72,7 +74,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
         description: `${planId} Subscription`,
         order_id: order.id,
         handler: async function (response: RazorpayResponse) {
-          const verifyRes = await fetch('/api/verify-payment', {
+          const verifyRes = await fetch(`${API_BASE}/verify-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

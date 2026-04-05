@@ -3,7 +3,8 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, Trash2, Filter, AlertTriangle } from 'lucide-react';
 
-const API_BASE = "http://localhost:8000/api";
+import API_BASE from '../config';
+
 
 interface DataViewerProps {
   email: string;

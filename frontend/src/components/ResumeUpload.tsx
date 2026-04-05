@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, X, Search, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = "http://localhost:8000/api";
+import API_BASE from '../config';
+
 
 interface ResumeUploadProps {
   onSearchInitiated?: (keywords: string[]) => void;

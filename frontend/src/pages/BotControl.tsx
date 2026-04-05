@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Play, Square, Trash2, Clock, Terminal, Settings, Activity } from 'lucide-react';
 
-const API_BASE = "http://localhost:8000/api";
+import API_BASE from '../config';
+
 
 interface BotControlProps {
   botId: 'internshala' | 'naukri' | 'indeed' | 'company_crawler';

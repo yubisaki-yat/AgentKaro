@@ -3,7 +3,8 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Briefcase, CheckCircle, Search, Building, RefreshCw, Zap, User, Star } from 'lucide-react';
 
-const API_BASE = "http://localhost:8000/api";
+import API_BASE from '../config';
+
 
 interface KpiCardProps {
   title: string;

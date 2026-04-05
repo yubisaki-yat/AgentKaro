@@ -31,7 +31,8 @@ import DataViewer from './pages/DataViewer';
 import Settings from './pages/Settings';
 import SubscriptionModal from './components/SubscriptionModal';
 
-const API_BASE = "http://localhost:8000/api";
+import API_BASE from './config';
+
 const GITHUB_CLIENT_ID = "Ov23ligAAnZRWykTyl4N";
 const GOOGLE_CLIENT_ID = "598664193020-geh8usjn3h43htfaq7sr9s82t5hfbgp1.apps.googleusercontent.com";
 
