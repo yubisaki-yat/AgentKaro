@@ -18,3 +18,4 @@ pymongo
 httpx
 google-auth
 passlib[argon2]
+python-multipart
