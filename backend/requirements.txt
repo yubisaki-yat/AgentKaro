@@ -17,3 +17,4 @@ httpx
 google-auth
 razorpay
 passlib[argon2]
+certifi

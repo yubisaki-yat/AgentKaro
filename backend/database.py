@@ -1,12 +1,17 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime
 import os
+import certifi
+from motor.motor_asyncio import AsyncIOMotorClient
 
 # MongoDB Configuration
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 DB_NAME = "jobagent_ai"
 
-client = AsyncIOMotorClient(MONGO_URI)
+client = AsyncIOMotorClient(
+    MONGO_URI,
+    tls=True,
+    tlsCAFile=certifi.where(),
+    serverSelectionTimeoutMS=5000
+)
 db = client[DB_NAME]
 
 # Collections Mapping

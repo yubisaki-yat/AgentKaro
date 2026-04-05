@@ -39,6 +39,9 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
         "https://agentskaro-frontend.onrender.com",
+        "https://agentskaro-frontend.onrender.com/",
+        "https://agentskaro.onrender.com",
+        "https://agentskaro-backend.onrender.com",
         "https://agentskaro.co.in",
         "https://www.agentskaro.co.in",
     ],
@@ -388,29 +391,33 @@ async def get_config():
 
 @app.post("/api/register")
 async def register_user(identity: UserIdentity):
-    email = identity.email.lower().strip()
-    
-    existing_user = await MongoDB.get_user(email)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User already exists. Please login.")
-    
-    if not identity.password:
-        raise HTTPException(status_code=400, detail="Password is required")
+    try:
+        email = identity.email.lower().strip()
         
-    hashed_password = get_password_hash(identity.password)
-    user = await MongoDB.create_user(email, hashed_password)
-    
-    # Return user profile for auto-login
-    usage_doc = await MongoDB.get_usage(email)
-    counts = usage_doc.get("counts", {}) if usage_doc else {}
-    
-    return {
-        "status": "registered", 
-        "email": email,
-        "subscription": user.get("subscription_level", "free"),
-        "expiry": user.get("subscription_expiry"),
-        "counts": counts
-    }
+        existing_user = await MongoDB.get_user(email)
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User already exists. Please login.")
+        
+        if not identity.password:
+            raise HTTPException(status_code=400, detail="Password is required")
+            
+        hashed_password = get_password_hash(identity.password)
+        user = await MongoDB.create_user(email, hashed_password)
+        
+        # Return user profile for auto-login
+        usage_doc = await MongoDB.get_usage(email)
+        counts = usage_doc.get("counts", {}) if usage_doc else {}
+        
+        return {
+            "status": "registered", 
+            "email": email,
+            "subscription": user.get("subscription_level", "free"),
+            "expiry": user.get("subscription_expiry"),
+            "counts": counts
+        }
+    except Exception as e:
+        print(f"[AUTH] Registration error for {email}: {e}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
  
 @app.post("/api/auth/google")
 async def google_login(req: GoogleAuthRequest):
@@ -435,8 +442,9 @@ async def google_login(req: GoogleAuthRequest):
             "expiry": user.get("subscription_expiry"),
             "counts": counts
         }
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid Google Token")
+    except Exception as e:
+        print(f"[AUTH] Google Login error: {e}")
+        raise HTTPException(status_code=401, detail=f"Google Auth Failed: {str(e)}")
 
 @app.post("/api/auth/github")
 async def github_login(req: GithubAuthRequest):
