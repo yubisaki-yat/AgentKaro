@@ -110,6 +110,7 @@ logs_storage = {}
 # SCHEMAS
 # ----------------------------------------------------------------
 class BotConfig(BaseModel):
+    email: str
     roles: List[str] = []
     max_applies: int = 20
     keyword: str = ""
@@ -177,7 +178,8 @@ async def get_status(email: Optional[str] = None):
     return {"status": status}
 
 @app.post("/api/bot/{bot_id}/start")
-async def start_bot(bot_id: str, config: BotConfig, email: str = Body(..., embed=True)):
+async def start_bot(bot_id: str, config: BotConfig):
+    email = config.email
     if bot_id not in runners:
         raise HTTPException(status_code=404, detail="Bot not found")
     
