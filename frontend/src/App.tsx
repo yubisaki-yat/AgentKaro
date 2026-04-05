@@ -131,7 +131,7 @@ const App: React.FC = () => {
       if (status === 404) {
         setErrorHeader(`API Error (404): Endpoint not found at ${API_BASE}`);
       } else if (status === 500) {
-        setErrorHeader("Server Error (500): Connection failed to MongoDB or Backend.");
+        setErrorHeader(detail || `Server Error (500): ${message}`);
       } else if (message === "Network Error") {
         setErrorHeader(`Network Error: Failed to reach Backend at ${API_BASE}. Ensure VITE_API_URL is set in Render.`);
       } else {
