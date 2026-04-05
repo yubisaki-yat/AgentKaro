@@ -1,12 +1,11 @@
 // Central API configuration
-const RENDER_BACKEND = "https://agentskaro.onrender.com";
+const RENDER_BACKEND = "https://agentskaro-backend.onrender.com";
 
 let rawUrl: string;
 
 if (import.meta.env.VITE_API_URL) {
   rawUrl = import.meta.env.VITE_API_URL;
 } else if (window.location.hostname.includes('onrender.com')) {
-  // Use the known hardcoded Render backend URL
   rawUrl = RENDER_BACKEND;
 } else {
   rawUrl = "http://localhost:8000";
