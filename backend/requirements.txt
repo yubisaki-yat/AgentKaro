@@ -11,8 +11,7 @@ pydantic
 pymupdf
 python-docx
 rake-nltk
-motor
-pymongo
+supabase
 httpx
 google-auth
 razorpay

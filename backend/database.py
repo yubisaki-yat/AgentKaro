@@ -1,96 +1,117 @@
 import os
-import certifi
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient
+from supabase import create_client, Client
+from typing import Optional, List
 
-# MongoDB Configuration
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME = "jobagent_ai"
+# Supabase Configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-client = AsyncIOMotorClient(
-    MONGO_URI,
-    tls=True,
-    tlsAllowInvalidCertificates=True,
-    serverSelectionTimeoutMS=10000,
-    directConnection=True,
-    retryWrites=True,
-    w="majority"
-)
-db = client[DB_NAME]
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("[WARNING] Supabase credentials missing!")
 
-# Collections Mapping
-users = db.users
-settings = db.settings
-usage = db.usage
-applications = db.applications
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
 class MongoDB:
+    """
+    Supabase Implementation (Kept name 'MongoDB' to avoid breaking main.py imports)
+    """
+
     @staticmethod
     async def get_user(email: str):
-        return await users.find_one({"email": email.lower().strip()})
+        if not supabase: return None
+        email = email.lower().strip()
+        response = supabase.table("users").select("*").eq("email", email).execute()
+        return response.data[0] if response.data else None
 
     @staticmethod
     async def create_user(email: str, hashed_password: str = None, source: str = "local"):
+        if not supabase: return None
         email = email.lower().strip()
         new_user = {
             "email": email,
-            "hashed_password": hashed_password,
-            "source": source, # local, google
+            "password_hash": hashed_password,
+            "source": source,
             "subscription_level": "free",
-            "subscription_expiry": None,
             "is_active": True,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow().isoformat()
         }
-        await users.insert_one(new_user)
+        supabase.table("users").insert(new_user).execute()
+        
         # Initialize usage counts
-        platforms = ["internshala", "naukri", "indeed", "company_crawler"]
-        await usage.insert_one({
-            "email": email,
-            "counts": {p: 0 for p in platforms},
-            "last_updated": datetime.utcnow()
-        })
+        supabase.table("usage").insert({"email": email}).execute()
+        
+        # Initialize empty settings
+        supabase.table("settings").insert({"email": email, "data": {}}).execute()
+        
         return new_user
 
     @staticmethod
     async def update_subscription(email: str, level: str, expiry: datetime = None):
-        await users.update_one(
-            {"email": email.lower().strip()},
-            {"$set": {"subscription_level": level, "subscription_expiry": expiry}}
-        )
+        if not supabase: return
+        email = email.lower().strip()
+        update_data = {"subscription_level": level}
+        if expiry:
+            update_data["subscription_expiry"] = expiry.isoformat()
+        
+        supabase.table("users").update(update_data).eq("email", email).execute()
 
     @staticmethod
     async def get_usage(email: str):
-        return await usage.find_one({"email": email.lower().strip()})
+        if not supabase: return None
+        email = email.lower().strip()
+        response = supabase.table("usage").select("*").eq("email", email).execute()
+        return response.data[0] if response.data else None
 
     @staticmethod
     async def increment_usage(email: str, platform: str):
-        await usage.update_one(
-            {"email": email.lower().strip()},
-            {"$inc": {f"counts.{platform}": 1}, "$set": {"last_updated": datetime.utcnow()}}
-        )
+        if not supabase: return
+        email = email.lower().strip()
+        
+        # Get current counts
+        current = await MongoDB.get_usage(email)
+        if not current: return
+        
+        counts = current.get("counts", {})
+        counts[platform] = counts.get(platform, 0) + 1
+        
+        supabase.table("usage").update({
+            "counts": counts, 
+            "last_updated": datetime.utcnow().isoformat()
+        }).eq("email", email).execute()
 
     @staticmethod
     async def get_settings(email: str):
-        doc = await settings.find_one({"email": email.lower().strip()})
-        return doc.get("data", {}) if doc else {}
+        if not supabase: return {}
+        email = email.lower().strip()
+        response = supabase.table("settings").select("data").eq("email", email).execute()
+        return response.data[0]["data"] if response.data else {}
 
     @staticmethod
     async def save_settings(email: str, data: dict):
-        await settings.update_one(
-            {"email": email.lower().strip()},
-            {"$set": {"data": data, "updated_at": datetime.utcnow()}},
-            upsert=True
-        )
+        if not supabase: return
+        email = email.lower().strip()
+        supabase.table("settings").upsert({
+            "email": email, 
+            "data": data, 
+            "updated_at": datetime.utcnow().isoformat()
+        }).execute()
 
     @staticmethod
     async def add_application(email: str, app_data: dict):
-        app_data["email"] = email.lower().strip()
-        app_data["applied_at"] = datetime.utcnow()
-        await applications.insert_one(app_data)
+        if not supabase: return
+        email = email.lower().strip()
+        app_data["email"] = email
+        app_data["applied_at"] = datetime.utcnow().isoformat()
+        supabase.table("applications").insert(app_data).execute()
 
     @staticmethod
     async def get_applications(email: str, platform: str = None):
-        query = {"email": email.lower().strip()}
+        if not supabase: return []
+        email = email.lower().strip()
+        query = supabase.table("applications").select("*").eq("email", email)
         if platform:
-            query["platform"] = platform
-        return await applications.find(query).sort("applied_at", -1).to_list(length=100)
+            query = query.eq("platform", platform)
+        
+        response = query.order("applied_at", desc=True).limit(100).execute()
+        return response.data if response.data else []
