@@ -106,6 +106,32 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
     }
   ];
 
+  if (!email) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-12 text-center max-w-lg"
+        >
+          <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <Zap className="w-10 h-10 text-indigo-500" />
+          </div>
+          <h2 className="text-3xl font-black mb-4 tracking-tight">Welcome to JobAgent AI</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+            You are currently browsing in <strong>Guest Mode</strong>. Connect your identity to start using our autonomous job automation bots and track your applications in real-time.
+          </p>
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('open-login'))}
+            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:scale-105 transition-transform shadow-lg shadow-indigo-500/20"
+          >
+            Sign In to Start
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

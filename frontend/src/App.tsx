@@ -132,6 +132,8 @@ const App: React.FC = () => {
         setErrorHeader(`API Error (404): Endpoint not found at ${API_BASE}`);
       } else if (status === 500) {
         setErrorHeader("Server Error (500): Connection failed to MongoDB or Backend.");
+      } else if (message === "Network Error") {
+        setErrorHeader(`Network Error: Failed to reach Backend at ${API_BASE}. Ensure VITE_API_URL is set in Render.`);
       } else {
         setErrorHeader(detail || `Auth failed: ${message}`);
       }
@@ -163,6 +165,8 @@ const App: React.FC = () => {
       const message = err.message;
       if (status === 404) {
         setErrorHeader(`Google login failed (404): Endpoint missing at ${API_BASE}`);
+      } else if (message === "Network Error") {
+        setErrorHeader(`Network Error: Failed to reach Backend at ${API_BASE}. Ensure VITE_API_URL is set in Render.`);
       } else {
         setErrorHeader(`Google login failed: ${message}`);
       }
