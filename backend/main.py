@@ -35,7 +35,13 @@ app = FastAPI(title="Job Apply Dashboard API")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the actual frontend URL
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://agentskaro-frontend.onrender.com",
+        "https://agentskaro.co.in",
+        "https://www.agentskaro.co.in",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
