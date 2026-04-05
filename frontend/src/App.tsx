@@ -34,7 +34,7 @@ import SubscriptionModal from './components/SubscriptionModal';
 import API_BASE from './config';
 
 const GITHUB_CLIENT_ID = "Ov23ligAAnZRWykTyl4N";
-const GOOGLE_CLIENT_ID = "598664193020-geh8usjn3h43htfaq7sr9s82t5hfbgp1.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "598664193020-2so31492ohqniutv897c95me3h4svfu4.apps.googleusercontent.com";
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<Record<string, { running: boolean; elapsed: string }>>({ 
