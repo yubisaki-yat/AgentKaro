@@ -1,0 +1,35 @@
+services:
+  # Backend: Docker Web Service
+  - type: web
+    name: agentkaro-backend
+    runtime: docker
+    plan: free # Change to starter/paid if you hit limit
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+
+  # Frontend: Static Site
+  - type: static
+    name: agentkaro-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: agentkaro-backend
+          property: host
