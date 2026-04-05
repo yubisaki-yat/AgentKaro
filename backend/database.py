@@ -10,8 +10,11 @@ DB_NAME = "jobagent_ai"
 client = AsyncIOMotorClient(
     MONGO_URI,
     tls=True,
-    tlsCAFile=certifi.where(),
-    serverSelectionTimeoutMS=5000
+    tlsAllowInvalidCertificates=True,
+    serverSelectionTimeoutMS=10000,
+    directConnection=True,
+    retryWrites=True,
+    w="majority"
 )
 db = client[DB_NAME]
 
