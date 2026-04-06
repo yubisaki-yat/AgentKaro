@@ -273,19 +273,22 @@ async def start_bot(bot_id: str, config: BotConfig):
     # Fallback to master .env credentials if user hasn't set them in dashboard
     if bot_id == "internshala":
         if not env_overrides.get("INTERNSHALA_EMAIL"):
-            env_overrides["INTERNSHALA_EMAIL"] = os.getenv("INTERNSHALA_EMAIL")
+            env_overrides["INTERNSHALA_EMAIL"] = os.getenv("INTERNSHALA_EMAIL", "")
         if not env_overrides.get("INTERNSHALA_PASSWORD"):
-            env_overrides["INTERNSHALA_PASSWORD"] = os.getenv("INTERNSHALA_PASSWORD")
+            env_overrides["INTERNSHALA_PASSWORD"] = os.getenv("INTERNSHALA_PASSWORD", "")
     elif bot_id == "naukri":
         if not env_overrides.get("NAUKRI_EMAIL"):
-            env_overrides["NAUKRI_EMAIL"] = os.getenv("NAUKRI_EMAIL")
+            env_overrides["NAUKRI_EMAIL"] = os.getenv("NAUKRI_EMAIL", "")
         if not env_overrides.get("NAUKRI_PASSWORD"):
-            env_overrides["NAUKRI_PASSWORD"] = os.getenv("NAUKRI_PASSWORD")
+            env_overrides["NAUKRI_PASSWORD"] = os.getenv("NAUKRI_PASSWORD", "")
     elif bot_id == "indeed":
         if not env_overrides.get("INDEED_EMAIL"):
-            env_overrides["INDEED_EMAIL"] = os.getenv("INDEED_EMAIL")
+            env_overrides["INDEED_EMAIL"] = os.getenv("INDEED_EMAIL", "")
         if not env_overrides.get("INDEED_PASSWORD"):
-            env_overrides["INDEED_PASSWORD"] = os.getenv("INDEED_PASSWORD")
+            env_overrides["INDEED_PASSWORD"] = os.getenv("INDEED_PASSWORD", "")
+
+    # Ensure no None values in env_overrides
+    env_overrides = {k: v if v is not None else "" for k, v in env_overrides.items()}
 
     print(f"[API] Starting bot '{bot_id}' for {email} with config: {config}")
     try:
