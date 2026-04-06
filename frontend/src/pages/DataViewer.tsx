@@ -64,7 +64,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
            <div className="flex p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full sm:w-auto overflow-x-auto scrollbar-hide">
              <button 
                onClick={() => setActiveTab('internshala')}
-               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'internshala' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'}`}
+               className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'internshala' ? 'bg-[#1C4670] text-white shadow-lg shadow-[#1C4670]/20' : 'text-slate-600 dark:text-slate-500 hover:text-[#1C4670] dark:hover:text-[#FFA229]'}`}
              >
                Internshala
              </button>
@@ -104,7 +104,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
             <input 
               type="text" 
               placeholder={`Search ${activeTab}...`}
-              className="w-full bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 rounded-xl pl-11 pr-4 py-3 text-sm focus:border-indigo-500 outline-none transition-all text-slate-800 dark:text-slate-200 placeholder:text-slate-500"
+              className="w-full bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 rounded-xl pl-11 pr-4 py-3 text-sm focus:border-[#FFA229] outline-none transition-all text-slate-800 dark:text-slate-200 placeholder:text-slate-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -113,7 +113,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
             <button className="flex items-center gap-2 px-6 py-3 glass-card text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex-1 sm:flex-none justify-center">
                <Filter className="w-4 h-4" /> Filter
             </button>
-            <button className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all flex-1 sm:flex-none justify-center">
+            <button className="flex items-center gap-2 px-6 py-3 bg-[#FFA229] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#FFA229]/20 hover:scale-[1.02] active:scale-95 transition-all flex-1 sm:flex-none justify-center">
                <Download className="w-4 h-4" /> Export
             </button>
          </div>
@@ -152,7 +152,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: idx * 0.02 }}
-                    className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-colors group"
+                    className="hover:bg-[#FFF2E5]/50 dark:hover:bg-[#1C4670]/10 transition-colors group"
                   >
                     {Object.entries(item).map(([key, val], vIdx) => {
                       const isLink = key.toLowerCase().includes('link');
@@ -166,7 +166,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
                                href={String(val)} 
                                target="_blank" 
                                rel="noopener noreferrer"
-                               className="text-indigo-600 dark:text-indigo-400 hover:underline transition-all text-xs font-medium flex items-center gap-1 max-w-[200px] truncate"
+                               className="text-[#1C4670] dark:text-[#FFA229] hover:underline transition-all text-xs font-black uppercase tracking-tight flex items-center gap-1 max-w-[200px] truncate"
                              >
                                {String(val)}
                              </a>
@@ -174,7 +174,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm border ${
                               String(val).toLowerCase().includes('success') ? 'bg-emerald-500 text-white border-emerald-600' :
                               String(val).toLowerCase().includes('failed') || String(val).toLowerCase().includes('error') ? 'bg-rose-500 text-white border-rose-600' :
-                              'bg-indigo-500 text-white border-indigo-600'
+                              'bg-[#1C4670] text-white border-[#2A6BA3]'
                             }`}>
                               {val}
                             </span>
@@ -224,7 +224,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
                           String(Object.entries(item).find(([k]) => k.toLowerCase().includes('status'))?.[1]).toLowerCase().includes('success') 
                             ? 'bg-emerald-500 text-white' 
-                            : 'bg-indigo-100 dark:bg-slate-800 text-indigo-600 dark:text-slate-400'
+                            : 'bg-[#FFF2E5] dark:bg-[#1C4670]/20 text-[#1C4670] dark:text-[#FFA229]'
                         }`}>
                           {String(Object.entries(item).find(([k]) => k.toLowerCase().includes('status'))?.[1])}
                         </span>
@@ -245,7 +245,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
                        href={String(Object.entries(item).find(([k]) => k.toLowerCase().includes('link'))?.[1])} 
                        target="_blank" 
                        rel="noopener noreferrer"
-                       className="w-full py-2 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-center text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-800 shadow-sm"
+                       className="w-full py-2 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-[#1C4670] dark:text-[#FFA229] border border-slate-200 dark:border-slate-800 shadow-sm"
                      >
                        View Original Posting
                      </a>
@@ -259,7 +259,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ email }) => {
         {filteredData.length === 0 && !loading && (
           <div className="px-6 py-24 text-center">
              <div className="flex flex-col items-center opacity-40">
-                <AlertTriangle className="w-12 h-12 mb-4 text-indigo-500 animate-pulse" />
+                <AlertTriangle className="w-12 h-12 mb-4 text-[#FFA229] animate-pulse" />
                 <p className="text-sm font-black uppercase tracking-widest text-slate-500">Zero matches found</p>
                 <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search terms.</p>
              </div>

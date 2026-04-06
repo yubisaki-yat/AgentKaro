@@ -25,6 +25,9 @@ class IndeedBot:
         self.password = os.getenv("INDEED_PASSWORD")
         
         self.data = []
+        self.user_email = os.environ.get("USER_EMAIL", "default")
+        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, 'live_view.jpg')
+        os.makedirs(os.path.dirname(self.screenshot_path), exist_ok=True)
         self.driver = self._setup_driver()
 
     def _setup_driver(self):
@@ -72,6 +75,13 @@ class IndeedBot:
                 std_opts.add_argument("--disable-gpu")
                 return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
+    def _take_screenshot(self, label=""):
+        try:
+            if self.driver:
+                self.driver.save_screenshot(self.screenshot_path)
+                print(f"[LIVE] Snapshot updated: {label}", flush=True)
+        except: pass
+
     def login(self):
         if not self.email or "your_indeed" in self.email:
             print("[LOGIN] No credentials found in .env. Skipping login (will scrape only).")
@@ -80,6 +90,7 @@ class IndeedBot:
         print(f"[LOGIN] Attempting Indeed login for: {self.email}", flush=True)
         try:
             self.driver.get("https://secure.indeed.com/account/login")
+            self._take_screenshot("Login Page")
             time.sleep(5)
             
             # 1. Enter Email
@@ -87,6 +98,7 @@ class IndeedBot:
                 EC.presence_of_element_located((By.ID, "ifl-InputWrapper-email"))
             )
             email_field.send_keys(self.email)
+            self._take_screenshot("Enter Email")
             self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
             time.sleep(3)
             
@@ -96,12 +108,14 @@ class IndeedBot:
                     EC.presence_of_element_located((By.ID, "ifl-InputWrapper-password"))
                 )
                 pass_field.send_keys(self.password)
+                self._take_screenshot("Enter Password")
                 self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
                 time.sleep(5)
             except:
                 print("   [INFO] Password field not found. Might be requiring OTP/Challenge.", flush=True)
             
             print("[LOGIN] Login attempt finished.", flush=True)
+            self._take_screenshot("Login Post-Process")
             return True
         except Exception as e:
             print(f"[LOGIN ERROR] {e}", flush=True)

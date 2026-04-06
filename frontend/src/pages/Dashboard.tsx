@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Briefcase, CheckCircle, Search, Building, RefreshCw, Zap, User, Star } from 'lucide-react';
+import { Briefcase, CheckCircle, Search, Building, RefreshCw, User, Star, Shield } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
 
 import API_BASE from '../config';
@@ -94,7 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
       title: "Applications Sent", 
       value: data.internshala.length, 
       icon: Briefcase, 
-      color: "bg-indigo-500",
+      color: "bg-[#1C4670]",
       delay: 0.1
     },
     { 
@@ -128,8 +128,8 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
           animate={{ opacity: 1, y: 0 }}
           className="glass-card p-12 text-center max-w-lg"
         >
-          <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <Zap className="w-10 h-10 text-indigo-500" />
+          <div className="w-20 h-20 bg-[#1C4670]/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-[#1C4670]" />
           </div>
           <h2 className="text-3xl font-black mb-4 tracking-tight">Welcome to JobAgent AI</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
@@ -137,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
           </p>
           <button 
             onClick={() => window.dispatchEvent(new CustomEvent('open-login'))}
-            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:scale-105 transition-transform shadow-lg shadow-indigo-500/20"
+            className="px-8 py-3 bg-[#FFA229] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-transform shadow-lg shadow-[#FFA229]/20"
           >
             Sign In to Start
           </button>
@@ -159,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
             )}
           </div>
           <p className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-            <User className="w-4 h-4 text-indigo-500" />
+            <User className="w-4 h-4 text-[#FFA229]" />
             Signed in as <span className="font-semibold text-slate-800 dark:text-slate-200">{email}</span>
           </p>
         </div>
@@ -182,22 +182,22 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.45 }}
-        className="glass-card p-8 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border-indigo-500/10 flex flex-col md:flex-row items-center gap-8 shadow-xl shadow-indigo-500/5 relative overflow-hidden"
+        className="glass-card p-8 bg-gradient-to-br from-[#1C4670]/5 to-[#FFA229]/5 border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full translate-x-1/4 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFA229]/10 blur-[80px] rounded-full translate-x-1/4 -translate-y-1/2 pointer-events-none" />
         
-        <div className="flex-1 space-y-4">
-           <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-500 rounded-lg shadow-lg shadow-indigo-500/20">
-                 <Zap className="w-5 h-5 text-white" />
+           <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3">
+                 <div className="p-2 bg-[#1C4670] rounded-lg shadow-lg shadow-[#1C4670]/20">
+                    <Shield className="w-5 h-5 text-white" />
+                 </div>
+                 <h3 className="text-xl font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Subscription Insights</h3>
               </div>
-              <h3 className="text-xl font-bold">Subscription Insights</h3>
+              <p className="text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed text-sm">
+                You are currently on the <span className="font-black text-[#FFA229] uppercase tracking-wider">{subscription} Plan</span>. 
+                {subscription === 'free' ? " Upgrade to premium to remove all application limits, unlock AI Resume Search, and access priority support." : " Enjoy your unlimited access, early feature access, and premium priority support!"}
+              </p>
            </div>
-           <p className="text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed">
-             You are currently on the <span className="font-black text-indigo-500 uppercase tracking-wider">{subscription} Plan</span>. 
-             {subscription === 'free' ? " Upgrade to premium to remove all application limits, unlock AI Resume Search, and access priority support." : " Enjoy your unlimited access, early feature access, and premium priority support!"}
-           </p>
-        </div>
 
         <div className="w-full md:w-80 space-y-4">
            <div className="flex justify-between items-end">
@@ -205,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Usage Tracker</span>
                 <span className="text-lg font-bold text-slate-900 dark:text-white">{(data.internshala?.length || 0)} <span className="text-slate-400 font-medium text-sm">/ 10 Applications</span></span>
               </div>
-              <span className={`text-xs font-bold ${subscription !== 'free' ? 'text-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'text-rose-500' : (data.internshala?.length || 0) >= 8 ? 'text-amber-500' : 'text-indigo-500'}`}>
+              <span className={`text-xs font-black uppercase ${subscription !== 'free' ? 'text-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'text-rose-500' : (data.internshala?.length || 0) >= 8 ? 'text-[#FFA229]' : 'text-[#1C4670]'}`}>
                 {subscription !== 'free' ? 'Unlimited' : (data.internshala?.length || 0) >= 10 ? 'Limit Reached' : `${10 - (data.internshala?.length || 0)} Remaining`}
               </span>
            </div>
@@ -213,7 +213,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: subscription !== 'free' ? '100%' : `${Math.min(((data.internshala?.length || 0) / 10) * 100, 100)}%` }}
-                className={`h-full rounded-full ${subscription !== 'free' ? 'bg-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'bg-rose-500' : (data.internshala?.length || 0) >= 8 ? 'bg-amber-500' : 'premium-gradient'}`}
+                className={`h-full rounded-full ${subscription !== 'free' ? 'bg-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'bg-rose-500' : (data.internshala?.length || 0) >= 8 ? 'bg-[#FFA229]' : 'bg-[#1C4670]'}`}
               />
            </div>
            <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
@@ -229,11 +229,11 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="glass-card overflow-hidden border-indigo-500/10 shadow-lg shadow-indigo-500/5"
+          className="glass-card overflow-hidden border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none"
         >
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-500/5">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Internshala Applications</h2>
-            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg">Last 5</span>
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+            <h2 className="text-lg font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Recent Internshala</h2>
+            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-[#FFF2E5] dark:bg-[#FFA229]/10 text-[#FFA229] rounded-lg">Last 5</span>
           </div>
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -304,11 +304,11 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="glass-card overflow-hidden border-blue-500/10 shadow-lg shadow-blue-500/5"
+          className="glass-card overflow-hidden border-[#1C4670]/10 shadow-lg shadow-[#1C4670]/5"
         >
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-blue-50/50 dark:bg-blue-500/5">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Naukri Scrapes</h2>
-            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">Last 5</span>
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+            <h2 className="text-lg font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Recent Naukri Scrapes</h2>
+            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-[#1C4670]/10 text-[#1C4670] dark:text-[#FFA229] rounded-lg border border-[#1C4670]/10">Last 5</span>
           </div>
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-sm">

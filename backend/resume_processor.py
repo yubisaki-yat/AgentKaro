@@ -4,28 +4,28 @@ import fitz  # PyMuPDF
 from docx import Document
 from rake_nltk import Rake
 import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
 
 # Ensure nltk data is downloaded
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+def setup_nltk():
+    libs = ['stopwords', 'punkt', 'averaged_perceptron_tagger', 'maxent_ne_chunker', 'words']
+    for lib in libs:
+        try:
+            nltk.data.find(f'corpora/{lib}') if 'corpora' in lib else nltk.data.find(f'tokenizers/{lib}') if 'tokenizers' in lib else nltk.data.find(f'taggers/{lib}')
+        except LookupError:
+            nltk.download(lib, quiet=True)
+
+setup_nltk()
 
 class ResumeProcessor:
     def __init__(self):
         self.rake = Rake()
-        # Common tech keywords to prioritize
-        self.skill_db = {
-            'python', 'javascript', 'react', 'node', 'express', 'fastapi', 'flask',
-            'django', 'sql', 'nosql', 'mongodb', 'postgresql', 'aws', 'azure', 'docker',
-            'kubernetes', 'java', 'spring', 'go', 'rust', 'c++', 'c#', 'php', 'laravel',
-            'tailwinds', 'css', 'html', 'typescript', 'android', 'ios', 'flutter',
-            'selenium', 'automation', 'devops', 'machine learning', 'data science',
-            'frontend', 'backend', 'fullstack', 'qa', 'analyst', 'developer', 'engineer'
+        # Technical term markers (common suffixes or patterns)
+        self.tech_markers = {
+            'developer', 'engineer', 'analyst', 'manager', 'lead', 'senior', 'junior',
+            'specialist', 'architect', 'consultant', 'intern', 'script', 'programming',
+            'framework', 'library', 'platform', 'cloud', 'data', 'software', 'stack'
         }
 
     def extract_text(self, file_path):
@@ -60,36 +60,65 @@ class ResumeProcessor:
         return text
 
     def extract_keywords(self, text):
-        """Extract skills and keywords using RAKE and skill DB."""
+        """Extract skills and keywords using RAKE and NLP POS tagging."""
         if not text:
             return []
 
-        # 1. RAKE extraction
+        # 1. RAKE extraction (captures phrases)
         self.rake.extract_keywords_from_text(text)
-        rake_keywords = self.rake.get_ranked_phrases()[:15]
+        rake_candidates = self.rake.get_ranked_phrases()[:30]
 
-        # 2. Skill DB matching (Exact matches + partials)
-        matched_skills = set()
-        words = re.findall(r'\b\w+\b', text.lower())
-        for word in words:
-            if word in self.skill_db:
-                matched_skills.add(word)
+        # 2. NLP POS Tagging (captures specific technical nouns)
+        tokens = word_tokenize(text)
+        tagged = nltk.pos_tag(tokens)
+        
+        # We want Proper Nouns (NNP) and potentially combined nouns (NN)
+        nlp_candidates = []
+        stop_words = set(stopwords.words('english'))
+        
+        for i in range(len(tagged)):
+            word, pos = tagged[i]
+            # Capture individual proper nouns or capitalized technical terms
+            if pos in ['NNP', 'NN'] and word.lower() not in stop_words and len(word) > 1:
+                if word[0].isupper() or any(marker in word.lower() for marker in self.tech_markers):
+                    nlp_candidates.append(word.strip('.,()'))
 
-        # 3. Combine and filter
-        # Prioritize matched skills, then top rake keywords
-        combined = list(matched_skills)
-        for kw in rake_keywords:
-            if len(combined) >= 10:
-                break
-            if kw.lower() not in combined:
-                combined.append(kw)
+        # 3. Frequency Analysis & Filtering
+        all_candidates = []
+        # Add RAKE phrases first
+        for phrase in rake_candidates:
+            # Filter out very long phrases or purely numeric ones
+            if len(phrase.split()) <= 4 and not phrase.isdigit():
+                all_candidates.append(phrase.lower())
 
-        return combined
+        # Add NLP candidates (word-by-word) if they aren't already represented
+        for word in nlp_candidates:
+            word_lower = word.lower()
+            if len(word_lower) > 2 and word_lower not in all_candidates:
+                # Basic check to ensure it's not a common English word (if not capitalized)
+                if word[0].isupper() or word_lower in self.tech_markers:
+                    all_candidates.append(word_lower)
+
+        # 4. Final Deduplication and Selection
+        # Use a set for unique items but maintain some order of relevance
+        final_list = []
+        seen = set()
+        
+        # Prioritize 2-3 word phrases (often skills) over single words
+        for item in all_candidates:
+            if item not in seen:
+                final_list.append(item)
+                seen.add(item)
+        
+        # Sort by length (longer phrases first usually better skills) then alphabetic
+        final_list.sort(key=lambda x: (-len(x.split()), x))
+
+        # Return top 20
+        return final_list[:20]
 
 if __name__ == "__main__":
     # Test
     processor = ResumeProcessor()
-    # Mock text
-    test_text = "I am a Senior Python Developer with experience in React and FastAPI. I know Docker and SQL."
+    test_text = "I am a Senior Software Engineer specializing in Python, React, and Machine Learning. I have experience with AWS and Kubernetes."
     keywords = processor.extract_keywords(test_text)
     print(f"Extracted: {keywords}")

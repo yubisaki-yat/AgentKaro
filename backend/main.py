@@ -8,7 +8,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body, UploadFile, File
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body, UploadFile, File, Form
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -126,7 +127,6 @@ class CreateSubscriptionRequest(BaseModel):
     plan: str
 
 class PaymentVerification(BaseModel):
-    email: str
     razorpay_order_id: Optional[str] = None
     razorpay_subscription_id: Optional[str] = None
     razorpay_payment_id: str
@@ -335,6 +335,17 @@ async def get_logs(bot_id: str, email: str):
     logs_storage[email][bot_id] = logs_storage[email][bot_id][-500:]
     return {"logs": logs_storage[email][bot_id]}
 
+@app.get("/api/live-screenshot")
+async def get_screenshot(email: str):
+    user_storage = get_user_storage(email)
+    screenshot_path = user_storage / "live_view.jpg"
+    
+    if not screenshot_path.exists():
+        # Return a placeholder or 404
+        raise HTTPException(status_code=404, detail="No live preview available yet.")
+        
+    return FileResponse(screenshot_path, media_type="image/jpeg", headers={"Cache-Control": "no-cache"})
+
 # ----------------------------------------------------------------
 # ROUTES: DATA
 # ----------------------------------------------------------------
@@ -384,7 +395,7 @@ async def update_settings(email: str = Body(..., embed=True), data: dict = Body(
 # ROUTES: RESUME UPLOAD
 # ----------------------------------------------------------------
 @app.post("/api/upload-resume")
-async def upload_resume(email: str = Body(...), file: UploadFile = File(...)):
+async def upload_resume(email: str = Form(...), file: UploadFile = File(...)):
     try:
         user_storage = get_user_storage(email)
         # Standardize filename to latest_resume.pdf for easier bot access

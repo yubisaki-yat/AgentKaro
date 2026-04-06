@@ -66,20 +66,20 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
       <div className="space-y-1.5 sm:space-y-2">
         <label className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">{label}</label>
         <div className="relative group">
-          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-600 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors z-10" />
+          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-600 group-focus-within:text-[#1C4670] dark:group-focus-within:text-[#FFA229] transition-colors z-10" />
           <input 
             type={isPassword ? (showPassword ? "text" : "password") : type}
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-12 py-3 text-sm focus:border-indigo-500 outline-none transition-all shadow-inner text-slate-800 dark:text-slate-200"
+            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-12 py-3 text-sm focus:border-[#FFA229] outline-none transition-all shadow-inner text-slate-800 dark:text-slate-200"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
              {isPassword && (
                <button 
                  type="button"
                  onClick={() => setShowPassword(!showPassword)}
-                 className="p-2 text-slate-400 hover:text-indigo-500 transition-colors"
+                 className="p-2 text-slate-400 hover:text-[#FFA229] transition-colors"
                >
                  <Info className="w-4 h-4" /> {/* Or an eye icon if available */}
                </button>
@@ -87,7 +87,7 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
              <button 
                type="button"
                onClick={copyToClipboard}
-               className="p-2 text-slate-400 hover:text-indigo-500 transition-colors"
+               className="p-2 text-slate-400 hover:text-[#FFA229] transition-colors"
              >
                <FileText className="w-4 h-4" />
              </button>
@@ -109,9 +109,9 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
       <form onSubmit={handleSave} className="space-y-8 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Section: Internshala Credentials */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 sm:p-8 space-y-6 border-indigo-200 dark:border-indigo-500/10">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 sm:p-8 space-y-6 border-slate-200 dark:border-slate-800 bg-[#FFF2E5]/10 dark:bg-[#1C4670]/5">
              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20">
+                <div className="p-2 bg-[#1C4670] text-white rounded-xl shadow-lg shadow-[#1C4670]/20">
                    <User className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Internshala</h3>
@@ -131,9 +131,9 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
           </motion.div>
 
           {/* Section: Naukri Credentials */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 sm:p-8 space-y-6 border-purple-200 dark:border-purple-500/10">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 sm:p-8 space-y-6 border-slate-200 dark:border-slate-800">
              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-purple-500 text-white rounded-xl shadow-lg shadow-purple-500/20">
+                <div className="p-2 bg-[#1C4670] text-white rounded-xl shadow-lg shadow-[#1C4670]/20">
                    <Briefcase className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Naukri</h3>
@@ -204,7 +204,7 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
                  <Briefcase className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Smart Profile Metadata</h3>
-              <div className="ml-auto p-2 cursor-help text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              <div className="ml-auto p-2 cursor-help text-slate-400 dark:text-slate-500 hover:text-[#1C4670] dark:hover:text-[#FFA229] transition-colors">
                 <Info className="w-4 h-4" />
               </div>
            </div>
@@ -226,11 +226,11 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
               <motion.div 
                 initial={{ y: 100 }}
                 animate={{ y: 0 }}
-                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-4 flex items-center justify-between shadow-2xl pointer-events-auto w-full sm:w-auto sm:min-w-[400px]"
+                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-2xl pointer-events-auto w-full sm:w-auto sm:min-w-[400px]"
               >
                 <div className="hidden sm:flex items-center gap-3 pr-8">
-                   <div className="p-2 bg-indigo-500/10 rounded-lg">
-                      <Lock className="w-4 h-4 text-indigo-500" />
+                   <div className="p-2 bg-[#1C4670]/10 rounded-lg">
+                      <Lock className="w-4 h-4 text-[#1C4670] dark:text-[#FFA229]" />
                    </div>
                    <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                       Encrypted local storage
@@ -239,7 +239,7 @@ const Settings: React.FC<SettingsProps> = ({ email }) => {
                 <button 
                   type="submit"
                   disabled={saving}
-                  className="flex-1 sm:flex-none px-12 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                  className="flex-1 sm:flex-none px-12 py-3 bg-[#FFA229] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[#FFA229]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save Configuration"}
                 </button>

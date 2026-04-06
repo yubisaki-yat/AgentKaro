@@ -29,9 +29,17 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
   const uploadResume = async () => {
     if (!file) return;
 
+    const email = localStorage.getItem('user_email');
+    if (!email) {
+      console.error("User email not found in localStorage");
+      setStatus('error');
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('email', email);
 
     try {
       const response = await axios.post(`${API_BASE}/upload-resume`, formData, {
@@ -67,13 +75,13 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card p-8 border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/5 overflow-hidden"
+      className="glass-card p-8 border-slate-200 dark:border-slate-800 bg-[#FFF2E5]/30 dark:bg-[#1C4670]/5 overflow-hidden"
     >
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg">
-          <Sparkles className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+        <div className="p-2 bg-[#FFF2E5] dark:bg-[#1C4670]/20 rounded-lg">
+          <Sparkles className="w-5 h-5 text-[#FFA229] dark:text-[#FFA229]" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">AI Resume Search</h2>
+        <h2 className="text-xl font-black text-[#1C4670] dark:text-white tracking-tight uppercase">AI Resume Search</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -83,7 +91,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
             <div className={`
               border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer
               transition-all duration-300 group
-              ${file ? 'border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5' : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-indigo-50 dark:hover:bg-indigo-500/5'}
+              ${file ? 'border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5' : 'border-slate-300 dark:border-slate-700 hover:border-[#FFA229] dark:hover:border-[#FFA229]/50 hover:bg-[#FFF2E5] dark:hover:bg-[#1C4670]/10'}
             `}>
               <input type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.docx" />
               {file ? (
@@ -99,7 +107,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
                 </>
               ) : (
                 <>
-                  <Upload className="w-12 h-12 text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 group-hover:scale-110 transition-all mb-2" />
+                  <Upload className="w-12 h-12 text-slate-400 dark:text-slate-500 group-hover:text-[#FFA229] dark:group-hover:text-[#FFA229] group-hover:scale-110 transition-all mb-2" />
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to upload resume</p>
                   <p className="text-xs text-slate-500 mt-1">PDF or DOCX supported</p>
                 </>
@@ -111,10 +119,10 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
             onClick={uploadResume}
             disabled={!file || uploading}
             className={`
-              w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all
+              w-full py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all
               ${!file || uploading 
                 ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed' 
-                : 'premium-gradient text-white shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98]'}
+                : 'bg-[#FFA229] text-white shadow-lg shadow-[#FFA229]/20 hover:scale-[1.02] active:scale-[0.98]'}
             `}
           >
             {uploading ? (
@@ -138,15 +146,15 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
               {extractedKeywords.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {extractedKeywords.map((kw, i) => (
-                    <motion.span
-                      key={kw}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 rounded-full text-xs font-medium"
-                    >
-                      {kw}
-                    </motion.span>
+                      <motion.span
+                        key={kw}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="px-3 py-1 bg-[#FFF2E5] dark:bg-[#1C4670]/30 text-[#1C4670] dark:text-[#FFA229] border border-[#FFA229]/20 rounded-full text-[10px] font-black uppercase tracking-wider"
+                      >
+                        {kw}
+                      </motion.span>
                   ))}
                 </div>
               ) : (
@@ -162,14 +170,14 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
             <div className="mt-6 grid grid-cols-2 gap-4">
               <button
                 onClick={() => startSearch('naukri')}
-                className="py-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-all text-xs"
+                className="py-3 bg-[#FFF2E5] dark:bg-[#1C4670]/20 text-[#1C4670] dark:text-[#FFA229] border border-[#FFA229]/20 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#FFA229]/10 transition-all text-[10px]"
               >
                 <Search className="w-4 h-4" />
-                Naukri Search
+                Naukri
               </button>
               <button
                 onClick={() => startSearch('internshala')}
-                className="py-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all text-xs"
+                className="py-3 bg-[#1C4670] text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#2A6BA3] transition-all text-[10px] shadow-lg shadow-[#1C4670]/20"
               >
                 <Sparkles className="w-4 h-4" />
                 Internshala

@@ -27,6 +27,10 @@ class CompanyCrawlerBot:
         self.smtp_email = os.getenv("SMTP_EMAIL")
         self.smtp_password = os.getenv("SMTP_PASSWORD")
         self.resume_path = os.getenv("RESUME_PATH") # User should set this or we find latest in storage/resumes
+        self.user_email = os.environ.get("USER_EMAIL", "default")
+        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, 'live_view.jpg')
+        os.makedirs(os.path.dirname(self.screenshot_path), exist_ok=True)
+        self.driver = None # Will be set in run()
 
     def _setup_driver(self):
         import sys
@@ -67,6 +71,13 @@ class CompanyCrawlerBot:
             std_opts.add_argument("--disable-dev-shm-usage")
             std_opts.add_argument("--disable-gpu")
             return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
+
+    def _take_screenshot(self, label=""):
+        try:
+            if self.driver:
+                self.driver.save_screenshot(self.screenshot_path)
+                print(f"[LIVE] Snapshot updated: {label}", flush=True)
+        except: pass
 
     def find_careers_link(self, driver):
         print(f"   [CRAWL] Searching for careers links on {self.url}...")
@@ -126,9 +137,11 @@ class CompanyCrawlerBot:
             careers_url = self.find_careers_link(driver)
             target_url = careers_url if careers_url else self.url
             driver.get(target_url)
+            self._take_screenshot("Crawl Target Page")
             time.sleep(5)
             
             emails = self.scrape_contacts(driver)
+            self._take_screenshot("Scanning Emails")
             if emails:
                 print(f"   [OUTREACH] Found potential contacts: {emails}")
                 if self.smtp_email and self.smtp_password:

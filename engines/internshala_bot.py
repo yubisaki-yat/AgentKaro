@@ -31,6 +31,9 @@ class InternshalaAutoApplyBot:
             raise ValueError("[ERROR] Missing credentials in .env")
         
         self.applied_links = self._load_applied_links()
+        self.user_email = os.environ.get("USER_EMAIL", "default")
+        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, 'live_view.jpg')
+        os.makedirs(os.path.dirname(self.screenshot_path), exist_ok=True)
         self.driver = self._setup_driver()
 
     def _load_applied_links(self):
@@ -92,14 +95,23 @@ class InternshalaAutoApplyBot:
                 
                 return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
+    def _take_screenshot(self, label=""):
+        try:
+            if self.driver:
+                self.driver.save_screenshot(self.screenshot_path)
+                print(f"[LIVE] Snapshot updated: {label}")
+        except: pass
+
     def login(self):
         print("[LOGIN] Attempting login...")
         try:
             self.driver.get("https://internshala.com/login/user")
+            self._take_screenshot("Login Page")
             time.sleep(5)
             
             if "dashboard" in self.driver.current_url:
                 print("[LOGIN] Already logged in via profile.")
+                self._take_screenshot("Dashboard")
                 return True
                 
             wait = WebDriverWait(self.driver, 20)
@@ -111,11 +123,13 @@ class InternshalaAutoApplyBot:
             password_field.send_keys(self.password)
             
             print("[LOGIN] Clicking submit...")
+            self._take_screenshot("Login Form Filled")
             self.driver.find_element(By.ID, "login_submit").click()
             time.sleep(10)
             
             if "dashboard" in self.driver.current_url or "internships" in self.driver.current_url:
                 print("[LOGIN] Login Success!")
+                self._take_screenshot("Logged In")
                 return True
             else:
                 print(f"[LOGIN] Failed. Current URL: {self.driver.current_url}")
@@ -187,6 +201,7 @@ class InternshalaAutoApplyBot:
                             self.driver.execute_script("arguments[0].click();", btn)
                             submit_clicked = True
                             print("   [SUCCESS] Applied!")
+                            self._take_screenshot("Application Submitted")
                             break
                     if submit_clicked: break
                 except: continue

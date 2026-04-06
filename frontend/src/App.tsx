@@ -12,6 +12,7 @@ import {
   Globe,
   Moon,
   Sun,
+  Shield,
   Sparkles,
   CheckCircle,
   RefreshCw,
@@ -47,7 +48,7 @@ const App: React.FC = () => {
   });
   const [isDark, setIsDark] = useState(false);
   const [email, setEmail] = useState<string>(localStorage.getItem('user_email') || "");
-  const [subscription, setSubscription] = useState<string>("free");
+  const [subscription, setSubscription] = useState<string>(localStorage.getItem('user_sub') || "free");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showIdentityModal, setShowIdentityModal] = useState(false); // Default false for guest mode
   const [tempEmail, setTempEmail] = useState("");
@@ -126,10 +127,11 @@ const App: React.FC = () => {
         setSyncSuccess(false);
         setPassword("");
       }, 1500);
-    } catch (err: any) {
-      const status = err.response?.status;
-      const detail = err.response?.data?.detail;
-      const message = err.message;
+    } catch (err) {
+      const axiosError = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+      const status = axiosError.response?.status;
+      const detail = axiosError.response?.data?.detail;
+      const message = axiosError.message;
 
       if (status === 404) {
         setErrorHeader(detail || `API Error (404): Resource not found at ${API_BASE}`);
@@ -163,9 +165,10 @@ const App: React.FC = () => {
         setIdentifying(false);
         setSyncSuccess(false);
       }, 1500);
-    } catch (err: any) {
-      const status = err.response?.status;
-      const message = err.message;
+    } catch (err) {
+      const axiosError = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+      const status = axiosError.response?.status;
+      const message = axiosError.message;
       if (status === 404) {
         setErrorHeader(`Google login failed (404): Endpoint missing at ${API_BASE}`);
       } else if (message === "Network Error") {
@@ -220,7 +223,7 @@ const App: React.FC = () => {
       interface GoogleGSI {
         accounts: {
           id: {
-            initialize: (config: { client_id: string; callback: (resp: any) => void }) => void;
+            initialize: (config: { client_id: string; callback: (resp: { credential?: string }) => void }) => void;
             renderButton: (parent: HTMLElement | null, options: object) => void;
           };
         };
@@ -267,6 +270,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('user_email');
+    localStorage.removeItem('user_sub');
     setEmail("");
     setSubscription("free");
     setTempEmail("");
@@ -294,21 +298,23 @@ const App: React.FC = () => {
   const isPremium = subscription !== 'free';
 
   return (
-    <div className="flex h-screen bg-white dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-300">
+    <div className="flex h-screen bg-white dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200 overflow-hidden font-sans selection:bg-[#FFA229]/30 transition-colors duration-300">
       {/* Mobile Header - Visible only on small screens */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[60] shadow-sm transition-colors duration-300">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[60] shadow-sm transition-all duration-300">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Rocket className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 bg-gradient-to-br from-[#1C4670] to-[#2A6BA3] rounded-xl flex items-center justify-center shadow-lg shadow-[#1C4670]/20 rotate-3">
+             <Shield className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="font-black text-lg tracking-tighter text-slate-900 dark:text-white leading-none uppercase">AgentsKaro</h1>
+          <div>
+            <h1 className="font-black text-xl tracking-tighter text-[#1C4670] dark:text-white leading-none uppercase">Agents<span className="text-[#FFA229]">Karo</span></h1>
+          </div>
         </div>
         <div className="flex items-center gap-2">
             <button 
                 onClick={() => setIsDark(!isDark)}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
             >
-                {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+                {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-[#1C4670]" />}
             </button>
             <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -337,14 +343,19 @@ const App: React.FC = () => {
         fixed lg:relative inset-y-0 left-0 w-72 bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 flex flex-col z-[80] transition-transform duration-300 ease-in-out lg:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Rocket className="w-6 h-6 text-white" />
+        <div className="p-7">
+          <div className="flex items-center gap-4 mb-10 group">
+            <div className="relative">
+              <div className="w-12 h-12 bg-gradient-to-br from-[#1C4670] to-[#2A6BA3] rounded-[18px] flex items-center justify-center shadow-xl shadow-slate-200 dark:shadow-none group-hover:rotate-12 transition-transform duration-500">
+                <Shield className="w-7 h-7 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#FFA229] rounded-full border-4 border-white dark:border-[#0f172a] z-10" />
             </div>
             <div>
-              <h1 className="font-black text-xl tracking-tighter text-slate-900 dark:text-white leading-none uppercase">AgentsKaro</h1>
-              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mt-1 block">Automation Suite</span>
+              <h1 className="font-black text-2xl tracking-tighter text-[#1C4670] dark:text-white leading-none">
+                AGENTS<span className="text-[#FFA229]">KARO</span>
+              </h1>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#1C4670]/80 dark:text-slate-400 mt-1.5 block">Legally Smart Automation</span>
             </div>
           </div>
 
@@ -359,8 +370,8 @@ const App: React.FC = () => {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group
                     ${location.pathname === item.path 
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' 
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400'
+                      ? 'bg-[#1C4670] text-white shadow-lg shadow-[#1C4670]/25' 
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-[#1C4670] dark:hover:text-[#FFA229]'
                     }
                   `}
                 >
@@ -382,7 +393,7 @@ const App: React.FC = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Node Status</span>
                  </div>
                  {isPremium && (
-                    <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20">
+                    <span className="px-2 py-0.5 bg-[#FFA229]/10 text-[#FFA229] text-[10px] font-black uppercase tracking-widest rounded-lg border border-[#FFA229]/20">
                       Lifetime
                     </span>
                  )}
@@ -393,7 +404,7 @@ const App: React.FC = () => {
                   <p className="text-[10px] text-slate-500 leading-relaxed italic">You are currently in view-only guest mode.</p>
                   <button 
                     onClick={() => setShowIdentityModal(true)}
-                    className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-500/20"
+                    className="w-full py-2 bg-[#1C4670] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-[#1C4670]/20"
                   >
                     Get Started / Login
                   </button>
@@ -420,7 +431,7 @@ const App: React.FC = () => {
                      {!isPremium && (
                        <button 
                          onClick={() => setShowSubscriptionModal(true)}
-                         className="w-full mt-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-500/20"
+                         className="w-full mt-3 py-2 bg-[#FFA229] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-[#FFA229]/20"
                        >
                          Upgrade Now
                        </button>
@@ -460,7 +471,7 @@ const App: React.FC = () => {
                 onClick={() => setIsDark(!isDark)}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
               >
-                {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+                {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-[#1C4670]" />}
               </button>
            </div>
         </header>
@@ -479,15 +490,15 @@ const App: React.FC = () => {
                 <Route path="/ai-search" element={<AIJobSearch subscription={isPremium ? 'lifetime' : subscription} onUpgrade={() => setShowSubscriptionModal(true)} />} />
                 <Route 
                   path="/internshala" 
-                  element={<BotControl botId="internshala" title="Internshala Bot" icon={Bot} color="bg-indigo-500" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
+                  element={<BotControl botId="internshala" title="Internshala Bot" icon={Bot} color="bg-[#1C4670]" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
                 />
                 <Route 
                   path="/naukri" 
-                  element={<BotControl botId="naukri" title="Naukri Scraper" icon={Search} color="bg-blue-500" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
+                  element={<BotControl botId="naukri" title="Naukri Scraper" icon={Search} color="bg-[#1C4670]" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
                 />
                 <Route 
                   path="/indeed" 
-                  element={<BotControl botId="indeed" title="Indeed Bot" icon={Globe} color="bg-cyan-500" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
+                  element={<BotControl botId="indeed" title="Indeed Bot" icon={Globe} color="bg-[#FFA229]" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
                 />
                 <Route 
                   path="/company-crawler" 
@@ -508,7 +519,7 @@ const App: React.FC = () => {
                animate={{ scale: 1, opacity: 1, y: 0 }}
                className="bg-white dark:bg-[#0f172a] w-full max-w-lg rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-white/10 overflow-hidden relative"
              >
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#1C4670] via-[#FFA229] to-[#1C4670]" />
                 <button 
                   onClick={() => setShowIdentityModal(false)}
                   className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-2xl transition-all group"
@@ -518,11 +529,14 @@ const App: React.FC = () => {
 
                 <div className="p-10 pt-16">
                   <div className="flex flex-col items-center text-center mb-10">
-                    <div className="w-20 h-20 bg-indigo-600 rounded-[30px] flex items-center justify-center shadow-2xl shadow-indigo-500/40 mb-6 rotate-3 group-hover:rotate-6 transition-transform">
-                      <Rocket className="w-10 h-10 text-white" />
+                    <div className="relative group">
+                      <div className="w-24 h-24 bg-gradient-to-tr from-[#1C4670] to-[#FFA229] rounded-[35px] flex items-center justify-center shadow-2xl shadow-slate-200 dark:shadow-none mb-6 rotate-3 group-hover:rotate-12 transition-all duration-700">
+                        <Shield className="w-12 h-12 text-white" strokeWidth={2.5} />
+                      </div>
+                      <div className="absolute inset-0 bg-[#FFA229] blur-2xl opacity-10 group-hover:opacity-30 transition-opacity" />
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase mb-3">Identity Access</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-[280px] leading-relaxed">Secure gateway to your autonomous automation suite.</p>
+                    <h2 className="text-4xl font-black text-[#1C4670] dark:text-white tracking-tighter uppercase mb-3 px-4 py-1 bg-white dark:bg-transparent shadow-sm dark:shadow-none rounded-2xl">Agents<span className="text-[#FFA229]">Karo</span></h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black max-w-[280px] leading-relaxed uppercase tracking-[0.2em] opacity-70">Identity Authentication Portal</p>
                   </div>
 
                   <div className="flex p-1.5 bg-slate-100 dark:bg-white/5 rounded-[22px] mb-8">
@@ -533,7 +547,7 @@ const App: React.FC = () => {
                       <button 
                         key={tab.label}
                         onClick={() => setIsRegistering(tab.id)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isRegistering === tab.id ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xl' : 'text-slate-500'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isRegistering === tab.id ? 'bg-white dark:bg-[#1C4670] text-slate-900 dark:text-white shadow-xl' : 'text-slate-500'}`}
                       >
                         <tab.icon className="w-3.5 h-3.5" />
                         {tab.label}
@@ -568,14 +582,14 @@ const App: React.FC = () => {
                         <div className="space-y-2 group">
                            <div className="relative">
                               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none pr-3 border-r border-slate-200 dark:border-white/10 h-1/2">
-                                <Mail className="w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                <Mail className="w-4 h-4 text-slate-400 group-focus-within:text-[#1C4670] transition-colors" />
                               </div>
                               <input 
                                 type="email" 
                                 placeholder="Email Address" 
                                 required
                                 disabled={identifying}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl pl-12 pr-5 py-5 focus:ring-4 ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-semibold dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-50"
+                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl pl-12 pr-5 py-5 focus:ring-4 ring-[#1C4670]/20 focus:border-[#1C4670] outline-none transition-all font-semibold dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-50"
                                 value={tempEmail}
                                 onChange={(e) => setTempEmail(e.target.value)}
                               />
@@ -585,14 +599,14 @@ const App: React.FC = () => {
                         <div className="space-y-2 group">
                            <div className="relative">
                               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none pr-3 border-r border-slate-200 dark:border-white/10 h-1/2">
-                                <Lock className="w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                <Lock className="w-4 h-4 text-slate-400 group-focus-within:text-[#1C4670] transition-colors" />
                               </div>
                               <input 
                                 type="password" 
                                 placeholder="Security Password" 
                                 required
                                 disabled={identifying}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl pl-12 pr-5 py-5 focus:ring-4 ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-semibold dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-50"
+                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl pl-12 pr-5 py-5 focus:ring-4 ring-[#1C4670]/20 focus:border-[#1C4670] outline-none transition-all font-semibold dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:opacity-50"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                               />
@@ -601,7 +615,7 @@ const App: React.FC = () => {
 
                         <button 
                           disabled={identifying}
-                          className="w-full py-5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-[0_20px_40px_-10px_rgba(79,70,229,0.4)] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg shadow-indigo-500/20"
+                          className="w-full py-5 bg-[#1C4670] text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-[0_20px_40px_-10px_rgba(28,70,112,0.4)] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 relative overflow-hidden group shadow-lg shadow-[#1C4670]/20"
                         >
                            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-700 pointer-events-none" />
                            {identifying ? (
@@ -649,8 +663,8 @@ const App: React.FC = () => {
         />
 
         {/* Background Gradients */}
-        <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-        <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+        <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#1C4670]/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-[#FFA229]/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
       </main>
     </div>
   );
