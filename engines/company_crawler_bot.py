@@ -70,33 +70,55 @@ class CompanyCrawlerBot:
 
     def find_careers_link(self, driver):
         print(f"   [CRAWL] Searching for careers links on {self.url}...")
-        driver.get(self.url)
-        time.sleep(5)
-        
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        links = soup.find_all('a', href=True)
-        
-        career_keywords = ['career', 'job', 'work', 'join', 'opportunity', 'opening']
-        for link in links:
-            href = link.get('href').lower()
-            text = link.text.lower()
-            if any(k in href or k in text for k in career_keywords):
-                target = link.get('href')
-                if not target.startswith('http'):
-                    # relative path handle
-                    from urllib.parse import urljoin
-                    target = urljoin(self.url, target)
-                print(f"   [FOUND] Potential careers page: {target}")
-                return target
+        try:
+            driver.get(self.url)
+            time.sleep(5)
+            
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            links = soup.find_all('a', href=True)
+            
+            # Weighted keywords for better detection
+            priority_keywords = ['career', 'job', 'opening', 'vacancy', 'hiring', 'join-us']
+            secondary_keywords = ['about', 'team', 'work', 'opportunity', 'people']
+            
+            # Check for priority links first
+            for link in links:
+                href = link.get('href').lower()
+                text = link.text.lower()
+                if any(pk in href or pk in text for pk in priority_keywords):
+                    target = link.get('href')
+                    if not target.startswith('http'):
+                        from urllib.parse import urljoin
+                        target = urljoin(self.url, target)
+                    print(f"   [FOUND] Priority careers page: {target}")
+                    return target
+            
+            # Fallback to secondary
+            for link in links:
+                href = link.get('href').lower()
+                text = link.text.lower()
+                if any(sk in href or sk in text for sk in secondary_keywords):
+                    target = link.get('href')
+                    if not target.startswith('http'):
+                        from urllib.parse import urljoin
+                        target = urljoin(self.url, target)
+                    print(f"   [FOUND] Secondary careers page: {target}")
+                    return target
+                    
+        except Exception as e:
+            print(f"   [ERROR] Crawl failed: {str(e)[:50]}")
         return None
 
     def scrape_contacts(self, driver):
         print("   [SCAN] Looking for HR/Contact information...")
         page_source = driver.page_source
         emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', page_source)
-        # Filter for typical HR emails
-        hr_emails = [e for e in emails if any(k in e.lower() for k in ['hr', 'career', 'job', 'recruit', 'hiring'])]
-        return list(set(hr_emails)) if hr_emails else list(set(emails))[:2]
+        
+        # Filter for high-priority recruiter emails
+        priority_terms = ['hr', 'career', 'job', 'recruit', 'hiring', 'talent', 'acquisition', 'people', 'growth']
+        hr_emails = [e for e in emails if any(k in e.lower() for k in priority_terms)]
+        
+        return list(set(hr_emails)) if hr_emails else list(set(emails))[:3]
 
     def run(self):
         driver = self._setup_driver()
@@ -138,11 +160,24 @@ class CompanyCrawlerBot:
             body = f"Hello,\n\nI am writing to express my interest in potential job opportunities at your company, specifically related to {', '.join(self.keywords)}. Attached is my resume for your review.\n\nBest regards,\nAutomated Application System"
             msg.attach(MIMEText(body, 'plain'))
             
+            if not self.resume_path or not os.path.exists(self.resume_path):
+                # Auto-discovery fallback in storage/resumes
+                resume_dir = os.path.join(os.path.dirname(__file__), '..', 'storage', 'resumes')
+                if os.path.exists(resume_dir):
+                    pdfs = [os.path.join(resume_dir, f) for f in os.listdir(resume_dir) if f.lower().endswith('.pdf')]
+                    if pdfs:
+                        # Pick latest modified
+                        latest_resume = max(pdfs, key=os.path.getmtime)
+                        print(f"   [AUTO] No path set, using latest found: {os.path.basename(latest_resume)}")
+                        self.resume_path = latest_resume
+
             if self.resume_path and os.path.exists(self.resume_path):
                 with open(self.resume_path, "rb") as f:
                     attach = MIMEApplication(f.read(), _subtype="pdf")
                     attach.add_header('Content-Disposition', 'attachment', filename=os.path.basename(self.resume_path))
                     msg.attach(attach)
+            else:
+                print("   [WARN] No resume file found — sending email without attachment.")
             
             server = smtplib.SMTP('smtp.gmail.com', 587)
             server.starttls()

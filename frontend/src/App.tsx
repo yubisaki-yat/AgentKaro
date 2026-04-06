@@ -18,7 +18,9 @@ import {
   LogOut,
   Mail,
   Lock,
-  X
+  X,
+  Menu,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -54,6 +56,7 @@ const App: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
   const [errorHeader, setErrorHeader] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -135,7 +138,7 @@ const App: React.FC = () => {
       } else if (message === "Network Error") {
         setErrorHeader(`Network Error: Failed to reach Backend at ${API_BASE}. Ensure VITE_API_URL is set in Render.`);
       } else {
-        setErrorHeader(detail || `Auth failed: ${message}`);
+        setErrorHeader(detail || `Error: ${message}`);
       }
       setIdentifying(false);
     }
@@ -277,7 +280,7 @@ const App: React.FC = () => {
     setShowIdentityModal(true);
   };
 
-  const menuItems = [
+  const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'AI Resume Search', path: '/ai-search', icon: Sparkles },
     { name: 'Internshala Bot', path: '/internshala', icon: Bot },
@@ -291,131 +294,158 @@ const App: React.FC = () => {
   const isPremium = subscription !== 'free';
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-300">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transition-colors duration-300">
+    <div className="flex h-screen bg-white dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200 overflow-hidden font-sans selection:bg-indigo-500/30 transition-colors duration-300">
+      {/* Mobile Header - Visible only on small screens */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[60] shadow-sm transition-colors duration-300">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Rocket className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="font-black text-lg tracking-tighter text-slate-900 dark:text-white leading-none uppercase">AgentsKaro</h1>
+        </div>
+        <div className="flex items-center gap-2">
+            <button 
+                onClick={() => setIsDark(!isDark)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            >
+                {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+            </button>
+            <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-400"
+            >
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+        </div>
+      </header>
+
+      {/* Mobile Menu Backdrop */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar - Responsive Drawer */}
+      <aside className={`
+        fixed lg:relative inset-y-0 left-0 w-72 bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 flex flex-col z-[80] transition-transform duration-300 ease-in-out lg:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <Rocket className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-black text-xl tracking-tighter text-slate-900 dark:text-white leading-none">AGENTSKARO</h1>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Autonomous</span>
+              <h1 className="font-black text-xl tracking-tighter text-slate-900 dark:text-white leading-none uppercase">AgentsKaro</h1>
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mt-1 block">Automation Suite</span>
             </div>
           </div>
 
-          <nav className="space-y-1">
-            {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+          <nav className="space-y-1.5">
+            {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                    isActive 
-                    ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-500/5' 
-                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group
+                    ${location.pathname === item.path 
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' 
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400'
+                    }
+                  `}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'group-hover:scale-110 transition-transform'}`} />
-                  <span className="font-medium">{item.name}</span>
+                  <Icon className={`w-5 h-5 ${location.pathname === item.path ? 'animate-pulse' : 'group-hover:scale-110 transition-transform'}`} />
+                  <span className="flex-1 tracking-tight">{item.name}</span>
+                  {location.pathname === item.path && <ChevronRight className="w-4 h-4 opacity-50" />}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="mt-auto px-4 w-full">
-          <div className="p-4 bg-slate-50 dark:bg-indigo-500/5 border border-slate-200 dark:border-indigo-500/10 rounded-2xl">
-             <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 overflow-hidden">
-                   <User className="w-4 h-4 text-indigo-500 shrink-0" />
-                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">{email ? email.split('@')[0] : "Guest"}</span>
-                </div>
-                 {email ? (
-                   <div className="flex items-center gap-2">
-                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                       isPremium 
-                       ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
-                       : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                     }`}>
-                       {isPremium ? 'PRO' : 'FREE'}
-                     </span>
-                     <button 
-                       onClick={handleLogout}
-                       className="p-1.5 hover:bg-rose-500/10 hover:text-rose-500 rounded-lg transition-colors group"
-                       title="Sign Out"
-                     >
-                       <LogOut className="w-3.5 h-3.5" />
-                     </button>
-                   </div>
-                 ) : (
-                    <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">
-                      GUEST
+        <div className="mt-auto p-6 space-y-4">
+           {/* Bot Status Summary */}
+           <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-white/5">
+              <div className="flex items-center justify-between mb-4">
+                 <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Node Status</span>
+                 </div>
+                 {isPremium && (
+                    <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/20">
+                      Lifetime
                     </span>
                  )}
-             </div>
-             
-             {!email ? (
-               <div className="space-y-3">
-                 <p className="text-[10px] text-slate-500 leading-relaxed italic">You are currently in view-only guest mode.</p>
+              </div>
+              
+              {!email ? (
+                <div className="space-y-3">
+                  <p className="text-[10px] text-slate-500 leading-relaxed italic">You are currently in view-only guest mode.</p>
+                  <button 
+                    onClick={() => setShowIdentityModal(true)}
+                    className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-500/20"
+                  >
+                    Get Started / Login
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-2">
+                     <Activity className="w-4 h-4 text-emerald-500" />
+                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Status</span>
+                  </div>
+                  <div className="space-y-2">
+                     <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-300">Internshala:</span>
+                        <span className={status.internshala?.running ? 'text-emerald-600 dark:text-green-400 font-medium' : 'text-slate-400 dark:text-slate-500'}>
+                          {status.internshala?.running ? 'Running' : 'Stopped'}
+                        </span>
+                     </div>
+                     <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-600 dark:text-slate-300">Naukri:</span>
+                        <span className={status.naukri?.running ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-400 dark:text-slate-500'}>
+                          {status.naukri?.running ? 'Running' : 'Stopped'}
+                        </span>
+                     </div>
+                     {!isPremium && (
+                       <button 
+                         onClick={() => setShowSubscriptionModal(true)}
+                         className="w-full mt-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-500/20"
+                       >
+                         Upgrade Now
+                       </button>
+                     )}
+                  </div>
+                </>
+              )}
+           </div>
+            {email && (
+              <div className="mt-6 flex items-center justify-center gap-6 text-slate-400 dark:text-slate-500 pb-2">
                  <button 
-                   onClick={() => setShowIdentityModal(true)}
-                   className="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-500/20"
+                   onClick={handleLogout}
+                   className="flex items-center gap-2 hover:text-red-500 transition-colors group"
                  >
-                   Get Started / Login
+                   <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                   <span className="text-[10px] font-bold uppercase tracking-wider">Sign Out</span>
                  </button>
-               </div>
-             ) : (
-               <>
-                 <div className="flex items-center gap-3 mb-2">
-                    <Activity className="w-4 h-4 text-emerald-500" />
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Status</span>
-                 </div>
-                 <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                       <span className="text-slate-600 dark:text-slate-300">Internshala:</span>
-                       <span className={status.internshala?.running ? 'text-emerald-600 dark:text-green-400 font-medium' : 'text-slate-400 dark:text-slate-500'}>
-                         {status.internshala?.running ? 'Running' : 'Stopped'}
-                       </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                       <span className="text-slate-600 dark:text-slate-300">Naukri:</span>
-                       <span className={status.naukri?.running ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-400 dark:text-slate-500'}>
-                         {status.naukri?.running ? 'Running' : 'Stopped'}
-                       </span>
-                    </div>
-                    {!isPremium && (
-                      <button 
-                        onClick={() => setShowSubscriptionModal(true)}
-                        className="w-full mt-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-indigo-500/20"
-                      >
-                        Upgrade Now
-                      </button>
-                    )}
-                 </div>
-               </>
-             )}
-          </div>
-           {email && (
-             <div className="mt-6 flex items-center justify-center gap-6 text-slate-400 dark:text-slate-500 pb-2">
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 hover:text-red-500 transition-colors group"
-                >
-                  <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Sign Out</span>
-                </button>
-             </div>
-           )}
+              </div>
+            )}
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative overflow-auto custom-scrollbar bg-slate-50 dark:bg-transparent">
-        <header className="sticky top-0 w-full h-16 bg-white/80 dark:bg-[#0a0d14]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 z-40 transition-colors duration-300">
+      <main className="flex-1 relative overflow-auto custom-scrollbar bg-slate-50 dark:bg-transparent pt-16 lg:pt-0">
+        <header className="hidden lg:flex sticky top-0 w-full h-16 bg-white/80 dark:bg-[#0a0d14]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 items-center justify-between px-8 z-40 transition-colors duration-300">
            <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                 {location.pathname === '/' ? 'Home' : location.pathname.substring(1).split('/')[0].toUpperCase()}
@@ -435,7 +465,7 @@ const App: React.FC = () => {
            </div>
         </header>
 
-        <div className="relative z-10 min-h-[calc(100vh-64px)]">
+        <div className="relative z-10 p-4 md:p-8 max-w-[1600px] mx-auto min-h-[calc(100vh-64px)]">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -470,60 +500,58 @@ const App: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Identity Modal */}
+        {/* Modals & Overlays */}
         {showIdentityModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0d14]/60 backdrop-blur-2xl p-4 overflow-y-auto">
              <motion.div 
                initial={{ scale: 0.95, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
-               className="bg-white/90 dark:bg-[#0f172a]/95 p-8 md:p-10 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] w-full max-w-md border border-white dark:border-white/10 relative overflow-hidden backdrop-blur-3xl"
+               className="bg-white dark:bg-[#0f172a] w-full max-w-lg rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-white/10 overflow-hidden relative"
              >
-                {/* Decorative background element */}
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
-                
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
                 <button 
                   onClick={() => setShowIdentityModal(false)}
-                  className="absolute top-8 right-8 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all z-10"
-                  title="Close"
+                  className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-2xl transition-all group"
                 >
-                  <X className="w-5 h-5 transition-transform active:rotate-90 duration-300" />
+                  <X className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
                 </button>
-                
-                <div className="flex items-center gap-2 mb-6 p-1.5 bg-slate-100/80 dark:bg-white/5 backdrop-blur-md rounded-[1.5rem] w-fit mx-auto border border-slate-200/50 dark:border-white/10">
-                  <button 
-                    onClick={() => setIsRegistering(false)}
-                    className={`px-8 py-2 text-xs font-black uppercase tracking-widest rounded-[1.2rem] transition-all duration-300 ${!isRegistering ? 'bg-white dark:bg-indigo-600 shadow-xl shadow-indigo-500/20 text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                  >
-                    Login
-                  </button>
-                  <button 
-                    onClick={() => setIsRegistering(true)}
-                    className={`px-8 py-2 text-xs font-black uppercase tracking-widest rounded-[1.2rem] transition-all duration-300 ${isRegistering ? 'bg-white dark:bg-indigo-600 shadow-xl shadow-indigo-500/20 text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                  >
-                    Register
-                  </button>
-                </div>
 
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black mb-2 tracking-tighter text-slate-900 dark:text-white leading-tight">
-                    {isRegistering ? 'Join the Elite' : 'Welcome Professional'}
-                  </h2>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-[0.05em]">
-                    {isRegistering ? 'The future of autonomous job hunting' : 'Access your private AI dashboard'}
-                  </p>
-                </div>
+                <div className="p-10 pt-16">
+                  <div className="flex flex-col items-center text-center mb-10">
+                    <div className="w-20 h-20 bg-indigo-600 rounded-[30px] flex items-center justify-center shadow-2xl shadow-indigo-500/40 mb-6 rotate-3 group-hover:rotate-6 transition-transform">
+                      <Rocket className="w-10 h-10 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase mb-3">Identity Access</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-[280px] leading-relaxed">Secure gateway to your autonomous automation suite.</p>
+                  </div>
 
-                 {syncSuccess ? (
+                  <div className="flex p-1.5 bg-slate-100 dark:bg-white/5 rounded-[22px] mb-8">
+                    {[
+                      { id: false, label: "Log In", icon: Lock },
+                      { id: true, label: "Create Account", icon: User }
+                    ].map((tab) => (
+                      <button 
+                        key={tab.label}
+                        onClick={() => setIsRegistering(tab.id)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isRegistering === tab.id ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xl' : 'text-slate-500'}`}
+                      >
+                        <tab.icon className="w-3.5 h-3.5" />
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {syncSuccess ? (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="py-12 text-center"
+                      className="text-center py-12"
                     >
-                      <div className="inline-flex p-5 bg-emerald-500/20 text-emerald-500 rounded-[2rem] mb-6 shadow-xl shadow-emerald-500/10">
-                         <CheckCircle className="w-12 h-12" />
-                      </div>
-                      <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Identity Synced!</h3>
-                      <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">Redirecting to session...</p>
+                       <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <CheckCircle className="w-10 h-10 text-emerald-500" />
+                       </div>
+                       <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-widest uppercase mb-2">Vault Synced</h3>
+                       <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">Identity verified successfully.</p>
                     </motion.div>
                   ) : (
                     <form onSubmit={handleIdentify} className="space-y-4">
@@ -608,7 +636,7 @@ const App: React.FC = () => {
                         </div>
                     </form>
                   )}
-
+                </div>
              </motion.div>
           </div>
         )}

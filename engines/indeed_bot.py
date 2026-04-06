@@ -31,7 +31,8 @@ class IndeedBot:
         import sys
         print("[INIT] Launching Chrome for Indeed...")
         is_linux = sys.platform.startswith('linux')
-        force_headless = self.headless or is_linux
+        # Only force headless on Linux (e.g., Render/Docker), allow toggle on Windows
+        force_headless = self.headless if not is_linux else True
         
         if force_headless:
             print("   [INFO] Running in HEADLESS mode.")
@@ -115,25 +116,37 @@ class IndeedBot:
             self.driver.get(url)
             time.sleep(5)
             
-            items = self.driver.find_elements(By.CSS_SELECTOR, "div.job_seen_beacon")
-            print(f"[SCAN] Found {len(items)} potentials on Indeed.", flush=True)
+            # Robust multi-selector for Indeed job cards
+            selectors = [
+                "//div[contains(@class, 'job_seen_beacon')]",
+                "//td[contains(@class, 'resultContent')]",
+                "//div[contains(@class, 'cardOutline')]",
+                "//li[contains(@class, 'eu4oa1w0')]" # Common Indeed li class
+            ]
+            items = self.driver.find_elements(By.XPATH, " | ".join(selectors))
+            print(f"[SCAN] Found {len(items)} potentials on Indeed using robust selectors.", flush=True)
             
             for i, item in enumerate(items):
                 try:
-                    title_elem = item.find_element(By.CSS_SELECTOR, "h2.jobTitle span")
+                    # Find title safely
+                    title_elems = item.find_elements(By.CSS_SELECTOR, "h2.jobTitle, a.jcs-JobTitle")
+                    if not title_elems: continue
+                    
+                    title_elem = title_elems[0]
                     title = title_elem.get_attribute("title") or title_elem.text
-                    comp = item.find_element(By.CSS_SELECTOR, "span[data-testid='company-name']").text
-                    link_elem = item.find_element(By.CSS_SELECTOR, "a.jcs-JobTitle")
-                    link = link_elem.get_attribute("href")
+                    link = title_elem.get_attribute("href")
+                    
+                    # Find company safely
+                    comp_elems = item.find_elements(By.CSS_SELECTOR, "span[data-testid='company-name'], [class*='companyName']")
+                    comp = comp_elems[0].text if comp_elems else "Unknown Company"
                     
                     # Easy Apply detection
-                    easy_apply = False
-                    try:
-                        if "Easy Apply" in item.text:
-                            easy_apply = True
-                    except: pass
+                    item_text = item.text.lower()
+                    easy_apply = "easy apply" in item_text or "apply with your indeed resume" in item_text
                     
-                    print(f"   [{i+1}] {title} @ {comp} {'(Easy Apply)' if easy_apply else ''}")
+                    print(f"   [{i+1}/{len(items)}] {title} @ {comp} {'(Easy Apply)' if easy_apply else ''}")
+                    
+                    if not link: continue
                     
                     self.data.append({
                         "Job Title": title,
@@ -143,7 +156,14 @@ class IndeedBot:
                         "Status": "Scraped",
                         "Scraped At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     })
-                except: continue
+                    
+                    # Save every 5 items
+                    if i % 5 == 0:
+                        self.save_data()
+                        
+                except Exception as e: 
+                    print(f"      [SKIP] Item {i+1} error: {str(e)[:50]}...")
+                    continue
             
             self.save_data()
             

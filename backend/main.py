@@ -5,7 +5,7 @@ import logging
 import asyncio
 from typing import List, Optional
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body, UploadFile, File
@@ -546,11 +546,15 @@ async def identify_user(identity: UserIdentity):
     else:
         # Standard user login
         if not user:
-            raise HTTPException(status_code=404, detail="User not found. Please register first.")
-        if not identity.password or not user.get("hashed_password"):
-             raise HTTPException(status_code=401, detail="Authentication failed")
-        if not verify_password(identity.password, user["hashed_password"]):
-            raise HTTPException(status_code=401, detail="Incorrect Password")
+            raise HTTPException(status_code=401, detail="User not found. Please click the 'REGISTER' tab first to create an account.")
+        
+        # Check for password_hash (standard in our DB)
+        db_password = user.get("password_hash")
+        if not identity.password or not db_password:
+             raise HTTPException(status_code=401, detail="Authentication failed: No security credential found.")
+             
+        if not verify_password(identity.password, db_password):
+            raise HTTPException(status_code=401, detail="Incorrect Security Password")
     
     usage_doc = await MongoDB.get_usage(email)
     counts = usage_doc.get("counts", {}) if usage_doc else {}
@@ -652,40 +656,50 @@ async def create_subscription(req: CreateSubscriptionRequest):
 
 @app.post("/api/verify-payment")
 async def verify_payment(payment: PaymentVerification):
-    # Verify Signature
-    if payment.razorpay_subscription_id:
-        # Subscription signature: subscription_id|payment_id
-        body = f"{payment.razorpay_subscription_id}|{payment.razorpay_payment_id}"
-    else:
-        # Order signature: order_id|payment_id
-        body = f"{payment.razorpay_order_id}|{payment.razorpay_payment_id}"
+    try:
+        # Prepare params for Razorpay utility
+        params = {
+            'razorpay_payment_id': payment.razorpay_payment_id,
+            'razorpay_signature': payment.razorpay_signature
+        }
         
-    expected_signature = hmac.new(
-        key=RAZORPAY_KEY_SECRET.encode(),
-        msg=body.encode(),
-        digestmod=hashlib.sha256
-    ).hexdigest()
+        if payment.razorpay_subscription_id:
+            params['razorpay_subscription_id'] = payment.razorpay_subscription_id
+            logger.info(f"[PAYMENT] Verifying subscription: {payment.razorpay_subscription_id}")
+            client.utility.verify_subscription_payment_signature(params)
+        else:
+            params['razorpay_order_id'] = payment.razorpay_order_id
+            logger.info(f"[PAYMENT] Verifying order: {payment.razorpay_order_id}")
+            client.utility.verify_payment_signature(params)
 
-    if expected_signature != payment.razorpay_signature:
-        logger.error(f"[PAYMENT] Signature Mismatch for {payment.email}. Expected: {expected_signature}, Got: {payment.razorpay_signature}")
-        raise HTTPException(status_code=400, detail="Invalid payment signature")
+        logger.info(f"[PAYMENT] Signature verified successfully for {payment.email}")
 
-    logger.info(f"[PAYMENT] Signature Verified for {payment.email}. Payment ID: {payment.razorpay_payment_id}")
-
-    # Update User Subscription
-    user = await MongoDB.get_user(payment.email)
-    if user:
-        from datetime import timedelta
+        # Update User Subscription
+        user = await MongoDB.get_user(payment.email)
+        if not user:
+            # If user somehow doesn't exist during payment, create them (shouldn't happen but safe)
+            await MongoDB.create_user(payment.email, source="payment_system")
+            
         expiry = None
+        now = datetime.utcnow()
         if payment.plan == "monthly":
-            expiry = datetime.utcnow() + timedelta(days=30)
+            expiry = now + timedelta(days=30)
         elif payment.plan == "yearly":
-            expiry = datetime.utcnow() + timedelta(days=365)
+            expiry = now + timedelta(days=365)
+        elif payment.plan == "lifetime":
+            expiry = now + timedelta(days=36500) # ~100 years
             
         await MongoDB.update_subscription(payment.email, payment.plan, expiry)
-        return {"status": "success", "subscription": payment.plan}
-    
-    raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"[PAYMENT] Subscription updated to {payment.plan} for {payment.email}. Expiry: {expiry}")
+        
+        return {"status": "success", "subscription": payment.plan, "expiry": expiry}
+
+    except razorpay.errors.SignatureVerificationError as e:
+        logger.error(f"[PAYMENT] Signature Verification Failed for {payment.email}: {str(e)}")
+        raise HTTPException(status_code=400, detail="Invalid payment signature. Verification failed.")
+    except Exception as e:
+        logger.error(f"[PAYMENT] Internal verification error for {payment.email}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal verification error: {str(e)}")
 
 @app.post("/api/admin/increment-count")
 async def increment_count(req: PlatformCountRequest):

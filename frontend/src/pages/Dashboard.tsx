@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Briefcase, CheckCircle, Search, Building, RefreshCw, Zap, User, Star } from 'lucide-react';
+import Skeleton from '../components/Skeleton';
 
 import API_BASE from '../config';
 
@@ -12,21 +13,26 @@ interface KpiCardProps {
   icon: React.ElementType;
   color: string;
   delay: number;
+  loading?: boolean;
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, color, delay }) => (
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, color, delay, loading }) => (
   <motion.div 
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ delay }}
-    className="glass-card p-6 flex items-center gap-6 relative overflow-hidden group"
+    className="glass-card p-6 flex items-center gap-6 relative overflow-hidden group min-h-[120px]"
   >
     <div className={`p-4 rounded-2xl ${color} bg-opacity-10 group-hover:scale-110 transition-transform duration-300`}>
       <Icon className={`w-8 h-8 ${color.replace('bg-', 'text-')}`} />
     </div>
-    <div>
-      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">{title}</p>
-      <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{value}</p>
+    <div className="flex-1">
+      <p className="text-[10px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">{title}</p>
+      {loading ? (
+        <Skeleton className="h-8 w-20 mt-1" />
+      ) : (
+        <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">{value}</p>
+      )}
     </div>
     <div className={`absolute top-0 right-0 w-32 h-32 ${color} opacity-[0.03] rounded-full translate-x-1/2 -translate-y-1/2`} />
   </motion.div>
@@ -38,16 +44,24 @@ interface DashboardProps {
   status: Record<string, { running: boolean; elapsed: string }>;
 }
 
+interface JobData {
+  'Job Title'?: string;
+  Company?: string;
+  Status?: string;
+  Location?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
   const [data, setData] = useState<{
-    internshala: any[];
-    naukri: any[];
-    indeed: any[];
-    company_crawler: any[];
+    internshala: JobData[];
+    naukri: JobData[];
+    indeed: JobData[];
+    company_crawler: JobData[];
   }>({ internshala: [], naukri: [], indeed: [], company_crawler: [] });
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [intRes, nauRes, indRes, crawlRes] = await Promise.all([
@@ -67,13 +81,13 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email]);
 
   useEffect(() => {
     if (email) {
       fetchData();
     }
-  }, [email]);
+  }, [email, fetchData]);
 
   const stats = [
     { 
@@ -85,7 +99,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
     },
     { 
       title: "Success Rate", 
-      value: `${Math.round((data.internshala.filter((i: any) => i.Status === 'Success').length / (data.internshala.length || 1)) * 100)}%`, 
+      value: `${Math.round((data.internshala.filter((i: JobData) => i.Status === 'Success').length / (data.internshala.length || 1)) * 100)}%`, 
       icon: CheckCircle, 
       color: "bg-emerald-500",
       delay: 0.2
@@ -133,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -159,8 +173,8 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((s) => <KpiCard key={s.title} {...s} />)}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {stats.map((s) => <KpiCard key={s.title} {...s} loading={loading} />)}
       </div>
 
       {/* Subscription Status Card */}
@@ -221,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Internshala Applications</h2>
             <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg">Last 5</span>
           </div>
-          <div className="overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-transparent">
                 <tr>
@@ -231,7 +245,15 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {data.internshala.slice(-5).reverse().map((item: any, idx: number) => (
+                {loading ? (
+                   Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-6 w-16" /></td>
+                    </tr>
+                   ))
+                ) : data.internshala.slice(-5).reverse().map((item: JobData, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{item['Job Title'] || "N/A"}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.Company || "N/A"}</td>
@@ -252,6 +274,29 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
               </tbody>
             </table>
           </div>
+
+          <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800/50 min-h-[200px]">
+            {loading ? (
+              <div className="p-4 space-y-4">
+                <Skeleton className="h-16 w-full" count={3} />
+              </div>
+            ) : data.internshala.slice(-5).reverse().map((item: JobData, idx: number) => (
+              <div key={idx} className="p-4 space-y-2">
+                <div className="flex justify-between items-start capitalize">
+                  <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item['Job Title'] || "N/A"}</h4>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                    item.Status === 'Success' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  }`}>
+                    {item.Status || "Pending"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium">@{item.Company || "N/A"}</p>
+              </div>
+            ))}
+            {data.internshala.length === 0 && (
+              <div className="p-8 text-center text-slate-400 text-xs italic">No applications yet.</div>
+            )}
+          </div>
         </motion.div>
 
         {/* Naukri Table */}
@@ -265,7 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Naukri Scrapes</h2>
             <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg">Last 5</span>
           </div>
-          <div className="overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-transparent">
                 <tr>
@@ -275,7 +320,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {data.naukri.slice(-5).reverse().map((item: any, idx: number) => (
+                {data.naukri.slice(-5).reverse().map((item: JobData, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{item['Job Title'] || "N/A"}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.Company || "N/A"}</td>
@@ -289,6 +334,21 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800/50">
+            {data.naukri.slice(-5).reverse().map((item: JobData, idx: number) => (
+              <div key={idx} className="p-4 space-y-1">
+                <h4 className="font-bold text-slate-900 dark:text-white capitalize line-clamp-1">{item['Job Title'] || "N/A"}</h4>
+                <div className="flex justify-between items-center text-xs text-slate-500">
+                  <span>@{item.Company || "N/A"}</span>
+                  <span className="font-medium text-blue-500">{item.Location || "Remote"}</span>
+                </div>
+              </div>
+            ))}
+            {data.naukri.length === 0 && (
+              <div className="p-8 text-center text-slate-400 text-xs italic">No data found.</div>
+            )}
           </div>
         </motion.div>
       </div>

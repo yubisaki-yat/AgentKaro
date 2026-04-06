@@ -39,7 +39,8 @@ class NaukriAutoApplyBot:
         import sys
         print("[INIT] Launching Chrome for Naukri...")
         is_linux = sys.platform.startswith('linux')
-        force_headless = self.headless or is_linux
+        # Only force headless on Linux (e.g., Render/Docker), allow toggle on Windows
+        force_headless = self.headless if not is_linux else True
         
         if force_headless:
             print("   [INFO] Running in HEADLESS mode.")
@@ -171,22 +172,42 @@ class NaukriAutoApplyBot:
             for page in range(1, self.max_pages + 1):
                 print(f"\n[PAGE {page}] Scanning results...", flush=True)
                 
-                for i in range(2):
-                    self.driver.execute_script(f"window.scrollTo(0, {i*1000});")
-                    time.sleep(1.5)
+                for i in range(3):
+                    self.driver.execute_script(f"window.scrollTo(0, {i*1200});")
+                    time.sleep(2)
                     
-                items = self.driver.find_elements(By.XPATH, "//div[contains(@class, 'srp-jobtuple-wrapper')] | //div[contains(@class, 'srp-jobtuple-container')] | //article[contains(@class, 'jobTuple')]")
-                print(f"[SCAN] Found {len(items)} potentials.", flush=True)
+                # Robust multi-selector approach
+                selectors = [
+                    "//div[contains(@class, 'srp-jobtuple-wrapper')]",
+                    "//div[contains(@class, 'srp-jobtuple-container')]",
+                    "//article[contains(@class, 'jobTuple')]",
+                    "//div[contains(@class, 'cust-job-tuple')]",
+                    "//div[@data-job-id]",
+                    "//article[@data-job-id]"
+                ]
+                items = self.driver.find_elements(By.XPATH, " | ".join(selectors))
+                print(f"[SCAN] Found {len(items)} potentials using robust selectors.", flush=True)
                 
                 for i, item in enumerate(items):
                     try:
-                        title_elem = item.find_element(By.XPATH, ".//a[contains(@class, 'title')]")
+                        # Find title and link safely
+                        title_anchors = item.find_elements(By.XPATH, ".//a[contains(@class, 'title')]")
+                        if not title_anchors:
+                            continue
+                            
+                        title_elem = title_anchors[0]
                         title = title_elem.text
                         link = title_elem.get_attribute("href")
-                        comp = item.find_element(By.XPATH, ".//a[contains(@class, 'comp-name')]").text
                         
-                        print(f"   [{i+1}] Processing: {title} @ {comp}", flush=True)
+                        # Find company safely
+                        comp_elems = item.find_elements(By.XPATH, ".//a[contains(@class, 'comp-name')]")
+                        comp = comp_elems[0].text if comp_elems else "Unknown Company"
                         
+                        print(f"   [{i+1}/{len(items)}] Processing: {title} @ {comp}", flush=True)
+                        
+                        if not link:
+                            continue
+                            
                         status = self.apply_to_job(link)
                         
                         self.data.append({
@@ -197,18 +218,22 @@ class NaukriAutoApplyBot:
                             "Scraped At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         })
                         
-                        self.save_data()
+                        # Save every 5 items to prevent data loss
+                        if i % 5 == 0:
+                            self.save_data()
                         
-                        if "naukri.com/job-listings" in self.driver.current_url or "naukri.com/jobs" not in self.driver.current_url:
+                        # Handle page transition logic
+                        curr_url = self.driver.current_url.lower()
+                        if "job-listings" in curr_url or "jobs" not in curr_url:
                             self.driver.back()
                             time.sleep(3)
                         
-                        if "naukri.com/job-listings" in self.driver.current_url:
+                        if "job-listings" in self.driver.current_url.lower():
                             print("   [RECOVERY] Stuck on job page, forcing search URL...", flush=True)
                             self.driver.get(url)
                             time.sleep(5)
                     except Exception as e: 
-                        print(f"      [SKIP] Item error: {e}", flush=True)
+                        print(f"      [SKIP] Item {i+1} error: {str(e)[:100]}...", flush=True)
                         continue
                     
                 try:

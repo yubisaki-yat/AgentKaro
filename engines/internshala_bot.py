@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import time
 import random
@@ -45,7 +46,8 @@ class InternshalaAutoApplyBot:
     def _setup_driver(self):
         print("[INIT] Launching Chrome...")
         is_linux = sys.platform.startswith('linux')
-        force_headless = self.headless or is_linux
+        # Only force headless on Linux (e.g., Render/Docker), allow toggle on Windows
+        force_headless = self.headless if not is_linux else True
         
         if force_headless:
             print("   [INFO] Running in HEADLESS mode.")
