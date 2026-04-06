@@ -5,7 +5,7 @@ let rawUrl: string;
 
 if (import.meta.env.VITE_API_URL) {
   rawUrl = import.meta.env.VITE_API_URL;
-} else if (window.location.hostname.includes('onrender.com')) {
+} else if (window.location.hostname.includes('onrender.com') || window.location.hostname.includes('agentskaro.co.in')) {
   rawUrl = RENDER_BACKEND;
 } else {
   rawUrl = "http://localhost:8000";

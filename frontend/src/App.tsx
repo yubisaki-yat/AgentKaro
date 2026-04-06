@@ -129,7 +129,7 @@ const App: React.FC = () => {
       const message = err.message;
 
       if (status === 404) {
-        setErrorHeader(`API Error (404): Endpoint not found at ${API_BASE}`);
+        setErrorHeader(detail || `API Error (404): Resource not found at ${API_BASE}`);
       } else if (status === 500) {
         setErrorHeader(detail || `Server Error (500): ${message}`);
       } else if (message === "Network Error") {
