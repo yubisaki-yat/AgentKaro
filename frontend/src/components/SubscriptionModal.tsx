@@ -70,7 +70,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
       // 2. Open Razorpay
       const options: any = {
         key: razorpayKey,
-        name: "JobAgent AI Pro",
+        name: "AgentsKaro Pro",
         description: planId === 'monthly' ? "2-Day Trial + Monthly Autopay" : `${planId} Subscription`,
         handler: async function (response: RazorpayResponse) {
           const verifyRes = await fetch(`${API_BASE}/verify-payment`, {

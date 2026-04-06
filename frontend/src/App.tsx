@@ -43,7 +43,7 @@ const App: React.FC = () => {
     indeed: { running: false, elapsed: "00:00:00" },
     company_crawler: { running: false, elapsed: "00:00:00" }
   });
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
   const [email, setEmail] = useState<string>(localStorage.getItem('user_email') || "");
   const [subscription, setSubscription] = useState<string>("free");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -300,7 +300,7 @@ const App: React.FC = () => {
               <Rocket className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-black text-xl tracking-tighter text-slate-900 dark:text-white leading-none">JOBAGENT AI</h1>
+              <h1 className="font-black text-xl tracking-tighter text-slate-900 dark:text-white leading-none">AGENTSKARO</h1>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Autonomous</span>
             </div>
           </div>

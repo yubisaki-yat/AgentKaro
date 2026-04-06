@@ -137,12 +137,12 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
               <Play className="w-4 h-4 fill-current" /> Login to Launch
             </button>
           ) : running ? (
-             <button 
-               onClick={handleStop}
-               className="flex items-center gap-2 px-6 py-2.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all duration-300"
-             >
-               <Square className="w-4 h-4 fill-current" /> Stop Bot
-             </button>
+               <button 
+                 onClick={handleStop}
+                 className="flex items-center gap-2 px-6 py-2.5 bg-rose-50 hover:bg-rose-500 hover:text-white dark:bg-red-500/10 text-rose-600 dark:text-red-400 border border-rose-200 dark:border-red-500/20 rounded-xl font-bold transition-all duration-300 shadow-sm"
+               >
+                 <Square className="w-4 h-4 fill-current" /> Stop Bot
+               </button>
           ) : (
              <button 
                onClick={handleStart}
@@ -160,11 +160,13 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Config Panel */}
         <div className="xl:col-span-1 space-y-6">
-           <div className="glass-card p-6 space-y-6">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Settings className="w-5 h-5 text-indigo-400" />
-                Bot Parameters
-              </h3>
+           <div className="bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-7 shadow-xl shadow-slate-200/40 dark:shadow-none transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/5">
+              <div className="flex items-center gap-3 mb-8">
+                 <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+                   <Settings className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                 </div>
+                 <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Bot Parameters</h3>
+              </div>
               
               {botId === 'company_crawler' ? (
                  <div className="space-y-4">
@@ -382,11 +384,23 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
               )}
            </div>
 
-           <div className={`p-6 glass-card border-${color.split('-')[1]}-500/10 flex items-start gap-4`}>
-              <Activity className="w-5 h-5 text-indigo-500 dark:text-indigo-400 mt-1" />
-              <div>
-                 <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">Status Report</h4>
-                 <p className="text-xs text-slate-500 leading-relaxed italic">
+           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-500/20 rounded-3xl p-6 flex items-start gap-4 relative overflow-hidden transition-all duration-500 hover:scale-[1.02]">
+              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                 <Activity className="w-24 h-24 text-indigo-600" />
+              </div>
+              <div className="relative">
+                 {running ? (
+                    <span className="relative flex h-5 w-5 mt-1">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-5 w-5 bg-emerald-500"></span>
+                    </span>
+                 ) : (
+                    <Activity className="w-6 h-6 text-indigo-500 dark:text-indigo-400 mt-0.5 relative z-10" />
+                 )}
+              </div>
+              <div className="relative z-10">
+                 <h4 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white mb-1.5">Status Report</h4>
+                 <p className="text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                    {running ? "Process is active and monitoring network requests for job matching." : "Bot is idle. Configure parameters and launch to begin automation."}
                  </p>
               </div>
@@ -394,22 +408,28 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
         </div>
 
         {/* Terminal Panel */}
-        <div className="xl:col-span-2 flex flex-col h-[500px]">
-           <div className="flex items-center justify-between mb-4 px-2">
+        <div className="xl:col-span-2 flex flex-col h-[600px] bg-[#0a0f1c] rounded-3xl border border-slate-800 shadow-2xl overflow-hidden relative group">
+           {/* Terminal Header macOS style */}
+           <div className="h-12 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 absolute top-0 w-full z-20">
               <div className="flex items-center gap-2">
-                 <Terminal className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Live Execution Stream</span>
+                 <div className="w-3.5 h-3.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]"></div>
+                 <div className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]"></div>
+                 <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]"></div>
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-50">
+                 <Terminal className="w-4 h-4 text-white" />
+                 <span className="text-[10px] font-mono font-bold text-white uppercase tracking-widest">Live_Execution_Stream</span>
               </div>
               <button 
                 onClick={handleClearLogs}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
                 title="Clear Logs"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
            </div>
            
-           <div className="log-terminal flex-1 custom-scrollbar">
+           <div className="flex-1 pt-16 pb-6 px-6 font-mono text-[13px] text-indigo-200 overflow-y-auto custom-scrollbar relative z-10 w-full break-all">
               {logs.length > 0 ? (
                  <div className="space-y-1">
                    {logs.map((log, i) => (
@@ -423,15 +443,20 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
                          </span>
                       </div>
                    ))}
-                   <div ref={logEndRef} />
+                    <div ref={logEndRef} />
                  </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-700 opacity-50">
-                   <Activity className="w-12 h-12 mb-4 animate-pulse" />
-                   <p className="text-xs font-mono tracking-widest uppercase">Waiting for bot execution line...</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-700 opacity-60">
+                   <div className="relative">
+                      <div className="absolute inset-0 border-2 border-indigo-500 rounded-full animate-ping opacity-20"></div>
+                      <Activity className="w-12 h-12 mb-4 text-indigo-500/50" />
+                   </div>
+                   <p className="text-xs font-mono tracking-widest uppercase text-indigo-500/50">Awaiting Subprocess Initialization...</p>
                 </div>
               )}
            </div>
+           {/* Terminal background glow */}
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-indigo-500/5 blur-[100px] rounded-full pointer-events-none" />
         </div>
       </div>
     </div>
