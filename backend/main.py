@@ -121,16 +121,22 @@ class BotConfig(BaseModel):
 class SettingsUpdate(BaseModel):
     data: dict
 
-class UserIdentity(BaseModel):
+class CreateSubscriptionRequest(BaseModel):
     email: str
-    password: Optional[str] = None
+    plan: str
 
 class PaymentVerification(BaseModel):
-    razorpay_order_id: str
+    email: str
+    razorpay_order_id: Optional[str] = None
+    razorpay_subscription_id: Optional[str] = None
     razorpay_payment_id: str
     razorpay_signature: str
     email: str
     plan: str
+
+class UserIdentity(BaseModel):
+    email: str
+    password: Optional[str] = None
 
 class CreateOrderRequest(BaseModel):
     plan: str # monthly, yearly, lifetime
@@ -261,9 +267,27 @@ async def start_bot(bot_id: str, config: BotConfig):
         raise HTTPException(status_code=400, detail=f"No script defined for bot '{bot_id}'")
 
     # Mix in user-specific DB settings
-    env_overrides.update(await load_user_settings(email))
+    user_settings = await load_user_settings(email)
+    env_overrides.update(user_settings)
     
-    print(f"[API] Starting bot '{bot_id}' with config: {config}")
+    # Fallback to master .env credentials if user hasn't set them in dashboard
+    if bot_id == "internshala":
+        if not env_overrides.get("INTERNSHALA_EMAIL"):
+            env_overrides["INTERNSHALA_EMAIL"] = os.getenv("INTERNSHALA_EMAIL")
+        if not env_overrides.get("INTERNSHALA_PASSWORD"):
+            env_overrides["INTERNSHALA_PASSWORD"] = os.getenv("INTERNSHALA_PASSWORD")
+    elif bot_id == "naukri":
+        if not env_overrides.get("NAUKRI_EMAIL"):
+            env_overrides["NAUKRI_EMAIL"] = os.getenv("NAUKRI_EMAIL")
+        if not env_overrides.get("NAUKRI_PASSWORD"):
+            env_overrides["NAUKRI_PASSWORD"] = os.getenv("NAUKRI_PASSWORD")
+    elif bot_id == "indeed":
+        if not env_overrides.get("INDEED_EMAIL"):
+            env_overrides["INDEED_EMAIL"] = os.getenv("INDEED_EMAIL")
+        if not env_overrides.get("INDEED_PASSWORD"):
+            env_overrides["INDEED_PASSWORD"] = os.getenv("INDEED_PASSWORD")
+
+    print(f"[API] Starting bot '{bot_id}' for {email} with config: {config}")
     try:
         success = runner.start(script_content, env_overrides)
         if success:
@@ -543,7 +567,7 @@ async def identify_user(identity: UserIdentity):
 @app.post("/api/create-order")
 async def create_order(req: CreateOrderRequest):
     amounts = {
-        "monthly": 2900,  # ₹29
+        "monthly": 100,  # ₹1
         "yearly": 39900,  # ₹399
         "lifetime": 79900  # ₹799
     }
@@ -558,16 +582,73 @@ async def create_order(req: CreateOrderRequest):
             "receipt": f"receipt_{req.email}_{int(time.time())}",
             "payment_capture": 1
         }
+        logger.info(f"[PAYMENT] Creating order for {req.email}, plan: {req.plan}, amount: {order_data['amount']}")
         order = client.order.create(data=order_data)
+        logger.info(f"[PAYMENT] Order created: {order.get('id')}")
         return order
     except Exception as e:
-        logger.error(f"Razorpay Order Error: {e}")
+        logger.error(f"[PAYMENT] Razorpay Order Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create payment order")
+
+# Cache for Plan IDs
+PLAN_IDS = {}
+
+@app.post("/api/create-subscription")
+async def create_subscription(req: CreateSubscriptionRequest):
+    if req.plan != "monthly":
+        # Only monthly supports trial/autopay for now as per user request
+        raise HTTPException(status_code=400, detail="Only monthly plan supports trial")
+        
+    try:
+        # 1. Ensure Plan exists (₹29 Monthly)
+        if "monthly" not in PLAN_IDS:
+            plan_data = {
+                "period": "monthly",
+                "interval": 1,
+                "item": {
+                    "name": "JobAgent AI Pro - Monthly",
+                    "amount": 2900, # ₹29 recurring
+                    "currency": "INR",
+                    "description": "Monthly subscription after 2-day trial"
+                }
+            }
+            plan = client.plan.create(data=plan_data)
+            PLAN_IDS["monthly"] = plan["id"]
+        
+        # 2. Create Subscription with 2-day Trial
+        # start_at defines trial end. User pays ₹1 now for authorization.
+        trial_end_timestamp = int(time.time()) + 172800 # 48 hours
+        
+        sub_data = {
+            "plan_id": PLAN_IDS["monthly"],
+            "total_count": 12, # 1 year total cycles
+            "quantity": 1,
+            "customer_notify": 1,
+            "start_at": trial_end_timestamp,
+            "notes": {
+                "email": req.email,
+                "trial": "2_days"
+            }
+        }
+        
+        logger.info(f"[PAYMENT] Creating subscription for {req.email}, trial end: {trial_end_timestamp}")
+        subscription = client.subscription.create(data=sub_data)
+        logger.info(f"[PAYMENT] Subscription created: {subscription.get('id')}")
+        return subscription
+    except Exception as e:
+        logger.error(f"[PAYMENT] Razorpay Subscription Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create subscription")
 
 @app.post("/api/verify-payment")
 async def verify_payment(payment: PaymentVerification):
     # Verify Signature
-    body = f"{payment.razorpay_order_id}|{payment.razorpay_payment_id}"
+    if payment.razorpay_subscription_id:
+        # Subscription signature: subscription_id|payment_id
+        body = f"{payment.razorpay_subscription_id}|{payment.razorpay_payment_id}"
+    else:
+        # Order signature: order_id|payment_id
+        body = f"{payment.razorpay_order_id}|{payment.razorpay_payment_id}"
+        
     expected_signature = hmac.new(
         key=RAZORPAY_KEY_SECRET.encode(),
         msg=body.encode(),
@@ -575,7 +656,10 @@ async def verify_payment(payment: PaymentVerification):
     ).hexdigest()
 
     if expected_signature != payment.razorpay_signature:
+        logger.error(f"[PAYMENT] Signature Mismatch for {payment.email}. Expected: {expected_signature}, Got: {payment.razorpay_signature}")
         raise HTTPException(status_code=400, detail="Invalid payment signature")
+
+    logger.info(f"[PAYMENT] Signature Verified for {payment.email}. Payment ID: {payment.razorpay_payment_id}")
 
     # Update User Subscription
     user = await MongoDB.get_user(payment.email)

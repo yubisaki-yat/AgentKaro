@@ -12,8 +12,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import undetected_chromedriver as uc
 
-# Load environment variables from parent directory
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+# Load environment variables from absolute path
+ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+load_dotenv(ENV_PATH)
 
 class InternshalaAutoApplyBot:
     def __init__(self, roles=None, max_applies_per_role=10, headless=False):
@@ -42,32 +43,52 @@ class InternshalaAutoApplyBot:
         return set()
 
     def _setup_driver(self):
-        print("[INIT] Launching Undetected Chrome...")
-        options = uc.ChromeOptions()
-        if self.headless: options.add_argument("--headless")
+        print("[INIT] Launching Chrome...")
+        is_linux = sys.platform.startswith('linux')
+        force_headless = self.headless or is_linux
         
-        # Use a consistent profile directory to avoid issues
-        profile_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'intern_profile')
-        if not os.path.exists(profile_path):
-            os.makedirs(profile_path, exist_ok=True)
+        if force_headless:
+            print("   [INFO] Running in HEADLESS mode.")
+
+        def get_options():
+            # Use basic options if UC fails
+            opts = uc.ChromeOptions()
+            if force_headless:
+                opts.add_argument("--headless")
+            opts.add_argument("--no-sandbox")
+            opts.add_argument("--disable-dev-shm-usage")
+            opts.add_argument("--disable-gpu")
+            opts.add_argument("--window-size=1920,1080")
             
-        options.add_argument(f"--user-data-dir={profile_path}")
-        options.add_argument("--start-maximized")
-        
+            profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'storage', 'intern_profile')
+            os.makedirs(profile_path, exist_ok=True)
+            opts.add_argument(f"--user-data-dir={profile_path}")
+            return opts
+
+        # Try Undetected Chromedriver first
         try:
-            # Force version 146 as user's browser is currently 146
-            return uc.Chrome(options=options, version_main=146)
-        except Exception as e1:
-            print(f"   [WARN] UC version 146 failed: {e1}. Trying auto-detect...")
+            print("   [DEBUG] Attempting Undetected Chrome (UC) initialization...")
+            return uc.Chrome(options=get_options())
+        except Exception as e:
+            print(f"   [WARN] UC initial attempt failed: {str(e)[:100]}. Retrying with fresh options...")
             try:
-                return uc.Chrome(options=options)
-            except Exception as e:
-                print(f"[ERROR] Final UC Driver setup failed: {e}")
-                # Fallback to standard if UC fails
-                import selenium.webdriver as webdriver
-                options = webdriver.ChromeOptions()
-                if self.headless: options.add_argument("--headless=new")
-                return webdriver.Chrome(options=options)
+                # Second attempt with fresh options and no extras
+                return uc.Chrome(options=get_options())
+            except Exception as e2:
+                print(f"   [ERROR] UC failed completely: {str(e2)[:100]}. Falling back to standard Selenium...")
+                
+                from selenium import webdriver
+                from selenium.webdriver.chrome.service import Service
+                from webdriver_manager.chrome import ChromeDriverManager
+                
+                std_opts = webdriver.ChromeOptions()
+                if force_headless:
+                    std_opts.add_argument("--headless=new")
+                std_opts.add_argument("--no-sandbox")
+                std_opts.add_argument("--disable-dev-shm-usage")
+                std_opts.add_argument("--disable-gpu")
+                
+                return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
     def login(self):
         print("[LOGIN] Attempting login...")

@@ -29,14 +29,44 @@ class CompanyCrawlerBot:
         self.resume_path = os.getenv("RESUME_PATH") # User should set this or we find latest in storage/resumes
 
     def _setup_driver(self):
-        print("[INIT] Launching Browser...")
-        options = uc.ChromeOptions()
-        if self.headless: options.add_argument("--headless")
-        options.add_argument("--start-maximized")
+        import sys
+        print("[INIT] Launching Browser for Company Crawler...")
+        is_linux = sys.platform.startswith('linux')
+        force_headless = self.headless or is_linux
+        
+        if force_headless:
+            print("   [INFO] Running in HEADLESS mode.")
+
+        def get_options():
+            opts = uc.ChromeOptions()
+            if force_headless:
+                opts.add_argument("--headless")
+            opts.add_argument("--no-sandbox")
+            opts.add_argument("--disable-dev-shm-usage")
+            opts.add_argument("--disable-gpu")
+            opts.add_argument("--window-size=1920,1080")
+            
+            profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'storage', 'crawler_profile')
+            os.makedirs(profile_path, exist_ok=True)
+            opts.add_argument(f"--user-data-dir={profile_path}")
+            return opts
+
         try:
-            return uc.Chrome(options=options, version_main=146)
-        except:
-            return uc.Chrome(options=options)
+            print("   [DEBUG] Attempting Undetected Chrome (UC)...")
+            return uc.Chrome(options=get_options())
+        except Exception as e:
+            print(f"   [WARN] UC failure: {str(e)[:100]}. Using standard Selenium fallback...")
+            from selenium import webdriver
+            from selenium.webdriver.chrome.service import Service
+            from webdriver_manager.chrome import ChromeDriverManager
+            
+            std_opts = webdriver.ChromeOptions()
+            if force_headless:
+                std_opts.add_argument("--headless=new")
+            std_opts.add_argument("--no-sandbox")
+            std_opts.add_argument("--disable-dev-shm-usage")
+            std_opts.add_argument("--disable-gpu")
+            return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
     def find_careers_link(self, driver):
         print(f"   [CRAWL] Searching for careers links on {self.url}...")

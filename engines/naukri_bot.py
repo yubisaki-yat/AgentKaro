@@ -36,30 +36,49 @@ class NaukriAutoApplyBot:
         self.driver = self._setup_driver()
 
     def _setup_driver(self):
-        print("[INIT] Launching Undetected Chrome for Naukri...", flush=True)
-        options = uc.ChromeOptions()
-        if self.headless: options.add_argument("--headless")
+        import sys
+        print("[INIT] Launching Chrome for Naukri...")
+        is_linux = sys.platform.startswith('linux')
+        force_headless = self.headless or is_linux
         
-        profile_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'naukri_profile')
-        if not os.path.exists(profile_path):
-            os.makedirs(profile_path, exist_ok=True)
+        if force_headless:
+            print("   [INFO] Running in HEADLESS mode.")
+
+        def get_options():
+            opts = uc.ChromeOptions()
+            if force_headless:
+                opts.add_argument("--headless")
+            opts.add_argument("--no-sandbox")
+            opts.add_argument("--disable-dev-shm-usage")
+            opts.add_argument("--disable-gpu")
+            opts.add_argument("--window-size=1920,1080")
             
-        options.add_argument(f"--user-data-dir={profile_path}")
-        options.add_argument("--start-maximized")
-        
+            profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'storage', 'naukri_profile')
+            os.makedirs(profile_path, exist_ok=True)
+            opts.add_argument(f"--user-data-dir={profile_path}")
+            return opts
+
+        # Try Undetected Chromedriver
         try:
-            # Force version 146 as user's browser is currently 146
-            return uc.Chrome(options=options, version_main=146)
-        except Exception as e1:
-            print(f"   [WARN] Naukri UC version 146 failed: {e1}. Trying auto-detect...")
+            print("   [DEBUG] Attempting Undetected Chrome (UC)...")
+            return uc.Chrome(options=get_options())
+        except Exception as e:
+            print(f"   [WARN] UC first attempt failed: {str(e)[:100]}. Retrying...")
             try:
-                return uc.Chrome(options=options)
-            except Exception as e:
-                print(f"[ERROR] Final Naukri UC setup failed: {e}")
-                import selenium.webdriver as webdriver
-                standard_options = webdriver.ChromeOptions()
-                if self.headless: standard_options.add_argument("--headless=new")
-                return webdriver.Chrome(options=standard_options)
+                return uc.Chrome(options=get_options())
+            except Exception as e2:
+                print(f"   [ERROR] UC failed completely: {str(e2)[:100]}. Using standard Selenium fallback...")
+                from selenium import webdriver
+                from selenium.webdriver.chrome.service import Service
+                from webdriver_manager.chrome import ChromeDriverManager
+                
+                std_opts = webdriver.ChromeOptions()
+                if force_headless:
+                    std_opts.add_argument("--headless=new")
+                std_opts.add_argument("--no-sandbox")
+                std_opts.add_argument("--disable-dev-shm-usage")
+                std_opts.add_argument("--disable-gpu")
+                return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
     def login(self):
         if not self.email or not self.password:

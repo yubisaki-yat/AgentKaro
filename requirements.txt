@@ -18,3 +18,4 @@ passlib[argon2]
 python-multipart
 supabase
 certifi
+webdriver-manager

@@ -11,7 +11,8 @@ interface SubscriptionModalProps {
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
-  razorpay_order_id: string;
+  razorpay_order_id?: string;
+  razorpay_subscription_id?: string;
   razorpay_signature: string;
 }
 
@@ -22,9 +23,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
     {
       id: 'monthly',
       name: 'Monthly',
-      price: '₹29',
-      tagline: 'Best for Trial',
-      features: ['Unlimited Applies', 'Email Notifications', 'Basic Support'],
+      price: '₹1',
+      tagline: '2-Day Trial then ₹29/mo',
+      features: ['₹1 for 2 days Trial', 'Then ₹29/month Autopay', 'Unlimited Applies', 'Cancel Anytime'],
       icon: <Zap className="w-6 h-6 text-blue-500" />,
       color: 'blue'
     },
@@ -57,8 +58,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
       const configData = await configRes.json();
       const razorpayKey = configData.razorpay_key;
 
-      // 1. Create Order
-      const res = await fetch(`${API_BASE}/create-order`, {
+      // 1. Create Order or Subscription
+      const endpoint = planId === 'monthly' ? 'create-subscription' : 'create-order';
+      const res = await fetch(`${API_BASE}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId, email })
@@ -66,13 +68,10 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
       const order = await res.json();
 
       // 2. Open Razorpay
-      const options = {
+      const options: any = {
         key: razorpayKey,
-        amount: order.amount,
-        currency: "INR",
-        name: "Job Apply Dashboard",
-        description: `${planId} Subscription`,
-        order_id: order.id,
+        name: "JobAgent AI Pro",
+        description: planId === 'monthly' ? "2-Day Trial + Monthly Autopay" : `${planId} Subscription`,
         handler: async function (response: RazorpayResponse) {
           const verifyRes = await fetch(`${API_BASE}/verify-payment`, {
             method: 'POST',
@@ -85,7 +84,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
           });
           const result = await verifyRes.json();
           if (result.status === 'success') {
-            alert('Subscription Activated!');
+            alert(planId === 'monthly' ? 'Trial Activated! Autopay scheduled.' : 'Subscription Activated!');
             onClose();
             window.location.reload();
           }
@@ -93,6 +92,15 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
         prefill: { email },
         theme: { color: "#3B82F6" }
       };
+
+      // Add ID based on type
+      if (planId === 'monthly') {
+        options.subscription_id = order.id;
+      } else {
+        options.order_id = order.id;
+        options.amount = order.amount;
+        options.currency = "INR";
+      }
 
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
