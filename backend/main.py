@@ -615,8 +615,7 @@ async def create_subscription(req: CreateSubscriptionRequest):
             plan = client.plan.create(data=plan_data)
             PLAN_IDS["monthly"] = plan["id"]
         
-        # 2. Create Subscription with 2-day Trial
-        # start_at defines trial end. User pays ₹1 now for authorization.
+        # 2. Create Subscription with 2-day Trial and ₹1 upfront charge
         trial_end_timestamp = int(time.time()) + 172800 # 48 hours
         
         sub_data = {
@@ -625,6 +624,15 @@ async def create_subscription(req: CreateSubscriptionRequest):
             "quantity": 1,
             "customer_notify": 1,
             "start_at": trial_end_timestamp,
+            "addons": [
+                {
+                    "item": {
+                        "name": "2-Day Trial Access",
+                        "amount": 100, # ₹1 in paise
+                        "currency": "INR"
+                    }
+                }
+            ],
             "notes": {
                 "email": req.email,
                 "trial": "2_days"
