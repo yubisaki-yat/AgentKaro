@@ -49,14 +49,16 @@ class InternshalaAutoApplyBot:
     def _setup_driver(self):
         print("[INIT] Launching Chrome...")
         is_linux = sys.platform.startswith('linux')
-        # Only force headless on Linux (e.g., Render/Docker), allow toggle on Windows
         force_headless = self.headless if not is_linux else True
         
         if force_headless:
             print("   [INFO] Running in HEADLESS mode.")
 
+        # Create user-specific profile to avoid conflicts
+        profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'storage', 'users', self.user_email, 'chrome_profile')
+        os.makedirs(profile_path, exist_ok=True)
+
         def get_options():
-            # Use basic options if UC fails
             opts = uc.ChromeOptions()
             if force_headless:
                 opts.add_argument("--headless")
@@ -64,23 +66,26 @@ class InternshalaAutoApplyBot:
             opts.add_argument("--disable-dev-shm-usage")
             opts.add_argument("--disable-gpu")
             opts.add_argument("--window-size=1920,1080")
-            
-            profile_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'storage', 'intern_profile')
-            os.makedirs(profile_path, exist_ok=True)
             opts.add_argument(f"--user-data-dir={profile_path}")
             return opts
 
-        # Try Undetected Chromedriver first
+        # Try Undetected Chromedriver with more resilience
         try:
-            print("   [DEBUG] Attempting Undetected Chrome (UC) initialization...")
-            return uc.Chrome(options=get_options())
+            print(f"   [DEBUG] Attempting UC initialization with profile: {profile_path}")
+            # Try once with standard options
+            driver = uc.Chrome(options=get_options(), version_main=None if is_linux else None)
+            return driver
         except Exception as e:
-            print(f"   [WARN] UC initial attempt failed: {str(e)[:100]}. Retrying with fresh options...")
+            print(f"   [WARN] UC initial attempt failed: {str(e)[:150]}")
             try:
-                # Second attempt with fresh options and no extras
-                return uc.Chrome(options=get_options())
+                # Try again without some arguments that might cause issues on Windows
+                opts = uc.ChromeOptions()
+                if force_headless: opts.add_argument("--headless")
+                opts.add_argument("--no-sandbox")
+                opts.add_argument(f"--user-data-dir={profile_path}_alt")
+                return uc.Chrome(options=opts)
             except Exception as e2:
-                print(f"   [ERROR] UC failed completely: {str(e2)[:100]}. Falling back to standard Selenium...")
+                print(f"   [ERROR] UC failed completely. Falling back to standard Selenium...")
                 
                 from selenium import webdriver
                 from selenium.webdriver.chrome.service import Service
@@ -90,9 +95,10 @@ class InternshalaAutoApplyBot:
                 if force_headless:
                     std_opts.add_argument("--headless=new")
                 std_opts.add_argument("--no-sandbox")
-                std_opts.add_argument("--disable-dev-shm-usage")
                 std_opts.add_argument("--disable-gpu")
+                std_opts.add_argument(f"--user-data-dir={profile_path}_std")
                 
+                # Use webdriver-manager for reliable fallback
                 return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
     def _take_screenshot(self, label=""):

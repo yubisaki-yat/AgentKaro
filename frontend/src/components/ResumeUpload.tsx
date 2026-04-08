@@ -157,8 +157,14 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
                       </motion.span>
                   ))}
                 </div>
+              ) : status === 'error' ? (
+                <div className="h-full flex flex-col items-center justify-center text-rose-500 text-center">
+                  <AlertCircle className="w-8 h-8 mb-2 opacity-80" />
+                  <p className="text-xs font-bold uppercase tracking-tight">AI Extraction Failed</p>
+                  <p className="text-[10px] mt-1 opacity-70">Check internet connection or<br/>try a different file format.</p>
+                </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-600 text-center">
+                <div className="h-full flex flex-col items-center justify-center text-slate-600 dark:text-slate-400 text-center">
                   <Search className="w-8 h-8 mb-2 opacity-20" />
                   <p className="text-xs">Upload your resume to see<br/>extracted skills and keywords.</p>
                 </div>

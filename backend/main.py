@@ -391,6 +391,9 @@ async def update_settings(email: str = Body(..., embed=True), data: dict = Body(
     await save_user_settings(email, data)
     return {"status": "saved"}
 
+# Initialize processor once
+resume_processor = ResumeProcessor()
+
 # ----------------------------------------------------------------
 # ROUTES: RESUME UPLOAD
 # ----------------------------------------------------------------
@@ -405,10 +408,10 @@ async def upload_resume(email: str = Form(...), file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, buffer)
         
         # Extract keywords for the user to see immediately
-        # Note: 'processor' and 'processor' were likely 'ResumeProcessor()'
-        # I'll initialize it here if missing or assume global
-        text = ResumeProcessor().extract_text(str(file_path))
-        keywords = ResumeProcessor().extract_keywords(text)
+        text = resume_processor.extract_text(str(file_path))
+        keywords = resume_processor.extract_keywords(text)
+        
+        logger.info(f"[PROCESSOR] Extracted {len(keywords)} keywords for {email}")
         
         return {
             "filename": file.filename,
@@ -416,7 +419,8 @@ async def upload_resume(email: str = Form(...), file: UploadFile = File(...)):
             "status": "success"
         }
     except Exception as e:
-        logger.error(f"Error processing resume for {email}: {e}")
+        import traceback
+        logger.error(f"Error processing resume for {email}: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ----------------------------------------------------------------

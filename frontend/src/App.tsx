@@ -32,6 +32,7 @@ import AIJobSearch from './pages/AIJobSearch';
 import BotControl from './pages/BotControl';
 import DataViewer from './pages/DataViewer';
 import Settings from './pages/Settings';
+import Browser from './pages/Browser';
 import SubscriptionModal from './components/SubscriptionModal';
 
 import API_BASE from './config';
@@ -292,6 +293,7 @@ const App: React.FC = () => {
     { name: 'Indeed Bot', path: '/indeed', icon: Globe },
     { name: 'Company Crawler', path: '/company-crawler', icon: Rocket },
     { name: 'Job Data', path: '/data', icon: Database },
+    { name: 'Web Browser', path: '/browser', icon: Globe },
     { name: 'Settings', path: '/settings', icon: SettingsIcon },
   ];
 
@@ -505,6 +507,7 @@ const App: React.FC = () => {
                   element={<BotControl botId="company_crawler" title="Company Crawler" icon={Rocket} color="bg-orange-500" email={email} subscription={isPremium ? 'lifetime' : subscription} onLimitReached={() => setShowSubscriptionModal(true)} />} 
                 />
                 <Route path="/data" element={<DataViewer email={email} />} />
+                <Route path="/browser" element={<Browser />} />
                 <Route path="/settings" element={<Settings email={email} />} />
               </Routes>
             </motion.div>
