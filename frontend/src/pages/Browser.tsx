@@ -1,255 +1,453 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Globe, 
-  ArrowLeft, 
-  ArrowRight, 
-  RotateCw, 
   Search, 
   Shield, 
+  Activity,
+  Plus,
+  X,
+  Lock,
+  ChevronRight,
+  RefreshCw,
+  Settings as SettingsIcon,
+  Bot,
+  Terminal,
   ExternalLink,
   Monitor,
   Layout,
-  Terminal,
-  Activity
+  Maximize2,
+  MousePointer2,
+  Cpu,
+  Bookmark,
+  Zap,
+  Command,
+  ChevronLeft
 } from 'lucide-react';
+import axios from 'axios';
 import API_BASE from '../config';
 
+// Defensive icon wrapper to prevent crashes if icons are missing in user's version
+const SafeIcon = ({ icon: Icon, size = 16, className = "" }: { icon: any, size?: number, className?: string }) => {
+    if (!Icon) return <div className={`w-${Math.ceil(size/4)} h-${Math.ceil(size/4)} bg-slate-400/20 rounded-sm`} />;
+    return <Icon size={size} className={className} />;
+};
+
 const Browser: React.FC = () => {
-  const url = 'https://internshala.com';
+  const [url, setUrl] = useState('https://internshala.com');
+  const [displayUrl, setDisplayUrl] = useState('https://internshala.com');
   const [isLoading, setIsLoading] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState<string>('');
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [tabs, setTabs] = useState([{ id: 1, title: 'Internshala', active: true, url: 'https://internshala.com' }]);
+  const [showConsole, setShowConsole] = useState(false);
+  const [typedChars, setTypedChars] = useState<string[]>([]);
+  const [activeBotId, setActiveBotId] = useState('internshala');
+  const [isLive, setIsLive] = useState(true);
+  
   const email = localStorage.getItem('user_email');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const typingTimeout = useRef<any>(null);
 
   const fetchScreenshot = useCallback(async () => {
-    if (!email) return;
+    if (!email || !isLive) return;
     try {
-      // Add timestamp to bypass cache
       const timestamp = new Date().getTime();
-      setScreenshotUrl(`${API_BASE}/live-screenshot?email=${email}&t=${timestamp}`);
+      setScreenshotUrl(`${API_BASE}/live-screenshot?email=${email}&bot_id=${activeBotId}&t=${timestamp}`);
       setLastUpdate(new Date().toLocaleTimeString());
     } catch (err) {
       console.error("Failed to fetch live view", err);
     }
-  }, [email]);
+  }, [email, isLive, activeBotId]);
 
   useEffect(() => {
     if (email) {
       fetchScreenshot();
-      const interval = setInterval(fetchScreenshot, 3000); // Update every 3 seconds
+      // HIGH FREQUENCY POLLING (800ms) for real-time smoothness
+      const interval = setInterval(fetchScreenshot, 800); 
       return () => clearInterval(interval);
     }
   }, [email, fetchScreenshot]);
 
+  const sendAction = async (action: any) => {
+    if (!email) return;
+    try {
+      await axios.post(`${API_BASE}/browser/action`, { ...action, email });
+      // Minor delay to allow bot to perform action before next snapshot
+      setTimeout(fetchScreenshot, 500);
+    } catch (err) {
+      console.error("Action failed:", err);
+    }
+  };
+
+  const handleNavigate = (target: string) => {
+    setIsLoading(true);
+    let finalUrl = target;
+    if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+    setUrl(finalUrl);
+    setDisplayUrl(finalUrl);
+    sendAction({ type: 'navigate', url: finalUrl });
+    setTimeout(() => setIsLoading(false), 2000);
+  };
+
   const handleRefresh = () => {
     setIsLoading(true);
-    fetchScreenshot();
+    sendAction({ type: 'reload' });
     setTimeout(() => setIsLoading(false), 1000);
   };
 
+  // Wheel/Scroll support
+  const handleWheel = (e: React.WheelEvent) => {
+    // Throttled scroll
+    if (Math.abs(e.deltaY) > 50) {
+        sendAction({ type: 'scroll', delta_y: e.deltaY });
+    }
+  };
+
+  // Keyboard capture with Visual Feedback
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        
+        if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
+            // Optimistic Typing Feedback
+            setTypedChars(prev => [...prev.slice(-10), e.key === 'Enter' ? '⏎' : e.key]);
+            if (typingTimeout.current) clearTimeout(typingTimeout.current);
+            typingTimeout.current = setTimeout(() => setTypedChars([]), 1500);
+
+            sendAction({ type: 'type', text: e.key === 'Enter' ? '\n' : e.key });
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [email]);
+
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] space-y-6">
-      {/* Header / Address Bar Area */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-4 border-slate-200 dark:border-slate-800 flex items-center gap-4 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-xl shadow-xl shadow-slate-200/50 dark:shadow-none"
-      >
-        <div className="flex items-center gap-2 pr-4 border-r border-slate-200 dark:border-slate-800">
-          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 cursor-not-allowed">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 cursor-not-allowed">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={handleRefresh}
-            className={`p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors ${isLoading ? 'animate-spin text-[#FFA229]' : 'text-slate-600 dark:text-slate-400'}`}
+    <div className="flex flex-col h-screen bg-[#020617] overflow-hidden select-none">
+      {/* Top Chrome: Tabs */}
+      <div className="bg-[#0f172a] pt-3 px-3 flex items-center gap-1 border-b border-white/5 relative z-50 overflow-x-auto no-scrollbar">
+        {tabs.map(tab => (
+          <div 
+            key={tab.id}
+            className={`group relative flex items-center gap-3 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider rounded-t-2xl transition-all min-w-[150px] cursor-pointer ${
+                tab.active 
+                ? 'bg-[#020617] text-white' 
+                : 'text-slate-500 hover:bg-white/5'
+            }`}
           >
-            <RotateCw className="w-5 h-5" />
+            <div className={`w-2 h-2 rounded-full ${tab.active ? 'bg-[#FFA229] animate-pulse' : 'bg-slate-700'}`} />
+            <span className="truncate flex-1">{tab.title}</span>
+            <X size={10} className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-white/10 rounded-full" />
+            
+            {tab.active && (
+                <>
+                    <div className="absolute -left-3 bottom-0 w-3 h-3 bg-[#020617]" style={{ clipPath: 'radial-gradient(circle at 0% 0%, transparent 12px, #020617 12px)' }} />
+                    <div className="absolute -right-3 bottom-0 w-3 h-3 bg-[#020617]" style={{ clipPath: 'radial-gradient(circle at 100% 0%, transparent 12px, #020617 12px)' }} />
+                </>
+            )}
+          </div>
+        ))}
+        <button className="p-3 text-slate-500 hover:text-white transition-all">
+          <Plus size={14} />
+        </button>
+      </div>
+
+      {/* Main Bar: Navigation & URL */}
+      <div className="bg-[#020617] px-6 py-4 flex items-center gap-6 border-b border-white/5 relative z-40">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-2xl border border-white/5">
+          <button onClick={() => sendAction({ type: 'back' })} className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all">
+            <SafeIcon icon={ChevronLeft} size={18} />
+          </button>
+          <button onClick={() => sendAction({ type: 'forward' })} className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all">
+            <SafeIcon icon={ChevronRight} size={18} />
+          </button>
+          <button onClick={handleRefresh} className={`p-2 hover:bg-white/10 rounded-xl transition-all ${isLoading ? 'animate-spin text-[#FFA229]' : 'text-slate-400 hover:text-white'}`}>
+            <SafeIcon icon={RefreshCw} size={16} />
           </button>
         </div>
 
         <div className="flex-1 relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest hidden sm:inline">Secure</span>
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+            <SafeIcon icon={Shield} size={12} className="text-emerald-500" />
+            <div className="h-4 w-px bg-white/10" />
           </div>
           <input 
             type="text" 
-            value={url}
-            readOnly
-            className="w-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-xl pl-12 pr-10 py-3 text-sm font-medium text-slate-600 dark:text-slate-300 outline-none focus:ring-2 ring-[#FFA229]/20 transition-all font-mono"
+            value={displayUrl}
+            onChange={(e) => setDisplayUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleNavigate(displayUrl)}
+            className="w-full bg-white/5 border border-white/5 rounded-[22px] pl-16 pr-14 py-4 text-[13px] font-bold text-slate-200 outline-none focus:ring-4 ring-[#FFA229]/5 focus:bg-white/10 transition-all font-mono"
+            placeholder="Search or enter secure URL..."
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-             <Search className="w-4 h-4 text-slate-400" />
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+             <div className="px-2 py-1 bg-white/5 rounded-md text-[9px] font-black text-slate-500 border border-white/5">SSL</div>
+             <Search size={14} className="text-slate-500" />
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-800">
-           <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bot Identity</span>
-              <span className="text-[10px] font-bold text-[#FFA229] uppercase">{email?.split('@')[0]}</span>
-           </div>
-           <div className="w-10 h-10 bg-[#1C4670] rounded-xl flex items-center justify-center shadow-lg shadow-[#1C4670]/20">
-              <Globe className="w-5 h-5 text-white" />
-           </div>
-        </div>
-      </motion.div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
-        {/* Browser Feed (Large) */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-3 glass-card bg-slate-900 border-slate-800 overflow-hidden relative group shadow-2xl shadow-black/20"
-        >
-          {/* Browser Controls / Tabs Mockup */}
-          <div className="bg-slate-800/80 p-2 flex items-center gap-2 border-b border-white/5">
-             <div className="flex gap-1.5 px-3">
-                <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-             </div>
-             <div className="px-4 py-1.5 bg-slate-900 rounded-t-lg rounded-b-none border-t border-x border-white/5 text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                <Activity className="w-3 h-3 text-[#FFA229] animate-pulse" />
-                Live Agent Feed
-             </div>
-          </div>
-
-          <div className="relative w-full h-full bg-[#0a0d14] flex items-center justify-center group">
-            {screenshotUrl ? (
-              <img 
-                src={screenshotUrl} 
-                alt="Bot Live View" 
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="text-center space-y-4 p-12">
-                <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto animate-pulse">
-                   <Monitor className="w-10 h-10 text-slate-600" />
-                </div>
-                <div>
-                   <h3 className="text-xl font-black text-white uppercase tracking-tight">Waiting for Agent</h3>
-                   <p className="text-slate-500 text-sm mt-2 max-w-[280px] mx-auto italic">Launch a bot engine from the control panel to see the live browser interactions here.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Overlay Status */}
-            <div className="absolute top-6 right-6 flex flex-col gap-3">
-               <div className="px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-3">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Agent Active</span>
-               </div>
-               {lastUpdate && (
-                  <div className="px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl border border-white/10 text-center">
-                     <span className="text-[9px] font-bold text-slate-400 uppercase block">Last Sync</span>
-                     <span className="text-[10px] font-black text-white">{lastUpdate}</span>
-                  </div>
-               )}
+        <div className="flex items-center gap-4">
+            {/* BOT SELECTOR */}
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/5 mr-4">
+                {['internshala', 'naukri', 'indeed', 'crawler'].map(id => (
+                    <button 
+                        key={id}
+                        onClick={() => setActiveBotId(id)}
+                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                            activeBotId === id 
+                            ? 'bg-[#FFA229] text-white shadow-lg' 
+                            : 'text-slate-500 hover:text-white'
+                        }`}
+                    >
+                        {id}
+                    </button>
+                ))}
             </div>
 
-            {/* Interactive Hints Overlay */}
-            <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div className="flex items-center justify-center gap-8">
-                   <div className="flex items-center gap-2">
-                      <div className="p-1 px-2 bg-white/20 rounded text-[9px] font-mono text-white">SHIFT + S</div>
-                      <span className="text-[10px] font-black text-white/70 uppercase">Status Snapshot</span>
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <div className="p-1 px-2 bg-white/20 rounded text-[9px] font-mono text-white">CTRL + R</div>
-                      <span className="text-[10px] font-black text-white/70 uppercase">Hard Reload</span>
-                   </div>
-                </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live Stream</span>
             </div>
-          </div>
-        </motion.div>
-
-        {/* Sidebar Info (Status/Logs) */}
-        <div className="space-y-6 flex flex-col min-h-0">
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-card p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a]"
-          >
-            <div className="flex items-center gap-3 mb-6">
-               <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <Layout className="w-5 h-5 text-emerald-500" />
-               </div>
-               <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">Viewport Specs</h3>
-            </div>
-            
-            <div className="space-y-4">
-               {[
-                 { label: "Resolution", value: "1920 x 1080" },
-                 { label: "Platform", value: "Undetected Chromium" },
-                 { label: "Encrypted", value: "AES-256-GCM" },
-                 { label: "Proxy", value: "Residential Node" }
-               ].map((item) => (
-                 <div key={item.label} className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-white/5 last:border-0">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
-                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase">{item.value}</span>
-                 </div>
-               ))}
-            </div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex-1 glass-card p-6 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] flex flex-col min-h-0"
-          >
-            <div className="flex items-center justify-between mb-6">
-               <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#FFA229]/10 rounded-lg">
-                     <Terminal className="w-5 h-5 text-[#FFA229]" />
-                  </div>
-                  <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">Bot Console</h3>
-               </div>
-               <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-500 uppercase">Synced</span>
-               </div>
-            </div>
-
-            <div className="flex-1 bg-slate-900 dark:bg-black rounded-2xl p-4 font-mono text-[11px] overflow-auto custom-scrollbar-slim space-y-2 text-slate-400 leading-relaxed border border-slate-800">
-               <div className="flex gap-2">
-                  <span className="text-[#FFA229] shrink-0">[$]</span>
-                  <span>Agent initialized for session...</span>
-               </div>
-               <div className="flex gap-2 border-l-2 border-emerald-500/30 pl-2 ml-1">
-                  <span className="text-emerald-500 shrink-0">[INFO]</span>
-                  <span>Authenticating secure fingerprint...</span>
-               </div>
-               <div className="flex gap-2 border-l-2 border-blue-500/30 pl-2 ml-1">
-                  <span className="text-blue-500 shrink-0">[DEBUG]</span>
-                  <span>Navigating to internshala.com</span>
-               </div>
-               <div className="flex gap-2 animate-pulse mt-4">
-                  <span className="text-slate-600 shrink-0">&gt;</span>
-                  <span className="w-20 h-3 bg-slate-800 rounded-sm" />
-               </div>
-            </div>
-
-            <button className="w-full mt-6 py-4 bg-[#1C4670] hover:bg-[#2A6BA3] text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-[#1C4670]/20">
-               <ExternalLink className="w-4 h-4" />
-               Raw Engine Logs
+            <button onClick={() => setShowConsole(!showConsole)} className={`p-3.5 rounded-2xl transition-all ${showConsole ? 'bg-[#FFA229] text-white' : 'bg-white/5 text-slate-400 hover:text-white'}`}>
+                <SafeIcon icon={Terminal} size={20} />
             </button>
-          </motion.div>
         </div>
       </div>
+
+      {/* Bookmarks / Quick Access Bar */}
+      <div className="bg-[#020617] px-8 py-2 flex items-center gap-6 border-b border-white/5 animate-in slide-in-from-top duration-700">
+         {[
+            { label: 'Internshala', url: 'https://internshala.com', icon: Zap },
+            { label: 'Naukri', url: 'https://naukri.com', icon: Search },
+            { label: 'Indeed', url: 'https://in.indeed.com', icon: Globe },
+            { label: 'Google Search', url: 'https://google.com', icon: Command },
+         ].map(item => (
+            <button 
+                key={item.label}
+                onClick={() => handleNavigate(item.url)}
+                className="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-[#FFA229] uppercase tracking-widest transition-all hover:scale-105"
+            >
+                <SafeIcon icon={item.icon} size={12} className="opacity-70" />
+                {item.label}
+            </button>
+         ))}
+      </div>
+
+      {/* Main Viewport Area */}
+      <div className="flex-1 flex min-h-0 relative">
+        <div 
+          ref={containerRef}
+          onWheel={handleWheel}
+          className="flex-1 bg-black relative cursor-crosshair overflow-hidden group"
+          onClick={async (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            // Visual Interaction Feedback
+            const ripple = document.createElement('div');
+            ripple.className = 'absolute w-12 h-12 bg-[#FFA229]/20 border border-[#FFA229]/50 rounded-full animate-ping pointer-events-none z-50';
+            ripple.style.left = `${x}%`;
+            ripple.style.top = `${y}%`;
+            ripple.style.transform = 'translate(-50%, -50%)';
+            e.currentTarget.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1000);
+
+            sendAction({ type: 'click', x, y });
+          }}
+        >
+          {screenshotUrl ? (
+            <motion.img 
+              key={screenshotUrl}
+              src={screenshotUrl} 
+              alt="Remote View" 
+              className="w-full h-full object-contain pointer-events-none transition-all duration-300"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-[#020617]">
+                <div className="text-center">
+                    <div className="w-24 h-24 bg-[#1C4670]/5 rounded-[40px] flex items-center justify-center mx-auto mb-8 animate-pulse border border-white/5 shadow-2xl">
+                        <Monitor size={40} className="text-[#1C4670]" />
+                    </div>
+                    <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Initializing Secure Tunnel</h3>
+                    <p className="text-slate-500 text-xs font-black uppercase tracking-[0.3em] mt-4 opacity-50">Residential Node Handshake... Pipelines Active.</p>
+                </div>
+            </div>
+          )}
+
+          {/* HUD Overlays (Top Right Flush) */}
+          <div className="absolute top-8 right-8 flex items-center gap-3 pointer-events-none">
+             <div className="px-5 py-3.5 bg-black/60 backdrop-blur-3xl rounded-[24px] border border-white/10 flex flex-col items-center shadow-2xl">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Resolution</span>
+                <span className="text-[11px] font-black text-white font-mono uppercase">1920x1080</span>
+             </div>
+             <div className="px-5 py-3.5 bg-black/60 backdrop-blur-3xl rounded-[24px] border border-white/10 flex flex-col items-center">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Tunneling</span>
+                <span className="text-[11px] font-black text-emerald-400 font-mono uppercase">Encrypted</span>
+             </div>
+          </div>
+
+          {/* TYPING OVERLAY (Optimistic UI) */}
+          <AnimatePresence>
+            {typedChars.length > 0 && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.2 }}
+                    className="absolute left-1/2 bottom-32 -translate-x-1/2 px-10 py-5 bg-[#FFA229]/90 backdrop-blur-xl text-white rounded-[40px] shadow-2xl z-[100] border-4 border-white/20"
+                >
+                    <div className="flex items-center gap-6">
+                        <KeyboardFeedback chars={typedChars} />
+                        <div className="h-8 w-px bg-white/30" />
+                        <span className="text-[11px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Injecting Key Stream...</span>
+                    </div>
+                </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Quick Stats HUD (Bottom Left) */}
+          <div className="absolute left-8 bottom-8 flex items-center gap-4 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+             <div className="px-5 py-4 bg-[#020617]/90 backdrop-blur-2xl rounded-[30px] border border-white/10 shadow-2xl flex items-center gap-8">
+                <div className="flex flex-col gap-0.5">
+                   <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">User Latency</span>
+                   <span className="text-[14px] font-black text-white font-mono tracking-tighter">0.42ms <span className="text-[10px] text-emerald-500">▲ Local</span></span>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="flex flex-col gap-0.5">
+                   <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Network Speed</span>
+                   <span className="text-[14px] font-black text-white font-mono tracking-tighter">1.2 Gbps</span>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
+                      <Cpu size={20} className="text-[#FFA229]" />
+                   </div>
+                   <div className="flex flex-col gap-0.5">
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Node Engine</span>
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest italic font-serif">V8 Enterprise</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Master Agent Console Drawer */}
+        <AnimatePresence>
+          {showConsole && (
+            <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute right-0 top-0 bottom-0 w-[500px] bg-[#0f172a] shadow-[-32px_0_64px_-16px_rgba(0,0,0,0.8)] border-l border-white/5 z-50 flex flex-col"
+            >
+                <div className="p-10 flex items-center justify-between border-b border-white/5">
+                    <div className="flex items-center gap-5">
+                       <div className="w-14 h-14 bg-gradient-to-tr from-[#FFA229] to-orange-400 rounded-3xl flex items-center justify-center shadow-2xl shadow-[#FFA229]/20">
+                          <Terminal size={24} className="text-white" />
+                       </div>
+                       <div>
+                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Master Console</h3>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1">Live Engine Feed - Unit 7</p>
+                       </div>
+                    </div>
+                    <button onClick={() => setShowConsole(false)} className="p-4 hover:bg-white/5 rounded-3xl transition-all">
+                        <X size={24} className="text-slate-500 hover:text-white" />
+                    </button>
+                </div>
+
+                <div className="flex-1 p-10 font-mono text-[12px] bg-[#020617]/50 overflow-auto custom-scrollbar space-y-4">
+                    <div className="flex gap-5">
+                        <span className="text-slate-700">11:42:12</span>
+                        <span className="text-emerald-500 font-black tracking-widest uppercase">BRIDGE</span>
+                        <span className="text-slate-300">Secure node synchronization successful.</span>
+                    </div>
+                    <div className="flex gap-5">
+                        <span className="text-slate-700">11:42:15</span>
+                        <span className="text-[#FFA229] font-black tracking-widest uppercase">STREAM</span>
+                        <span className="text-slate-300">Target viewport rendered at 1920x1080px.</span>
+                    </div>
+                    <div className="flex gap-5">
+                        <span className="text-slate-700">11:42:18</span>
+                        <span className="text-blue-500 font-black tracking-widest uppercase">INPUT</span>
+                        <span className="text-slate-300">Keyboard stream redirected to remote instance.</span>
+                    </div>
+                    <div className="flex gap-5 animate-pulse">
+                        <span className="text-slate-700">11:42:20</span>
+                        <span className="text-white font-black tracking-widest uppercase opacity-30">SCANNING</span>
+                        <span className="text-slate-500 italic">Listening for action injection hooks...</span>
+                    </div>
+                    
+                    <div className="pt-10 mt-10 border-t border-white/5">
+                       <div className="flex items-center gap-5">
+                          <div className="w-2 h-5 bg-[#FFA229] animate-pulse" />
+                          <span className="text-slate-500 font-black">root@agentskaro:~/active-node#</span>
+                          <span className="text-white font-black italic">await session.input();</span>
+                       </div>
+                    </div>
+                </div>
+
+                <div className="p-10 bg-[#020617] mt-auto flex flex-col gap-4">
+                    <div className="flex items-center justify-between px-6 py-4 bg-white/5 rounded-2xl border border-white/5">
+                        <span className="text-[10px] font-black text-slate-500 uppercase">Process Memory</span>
+                        <span className="text-[10px] font-black text-white font-mono">1.24 GB / 8 GB</span>
+                    </div>
+                    <button className="w-full py-6 bg-gradient-to-r from-[#1C4670] to-[#2A6BA3] text-white rounded-3xl text-sm font-black uppercase tracking-[0.4em] flex items-center justify-center gap-6 shadow-2xl shadow-[#1C4670]/20 hover:scale-[1.02] active:scale-95 transition-all">
+                        <Maximize2 size={24} />
+                        Detached Mode
+                    </button>
+                </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Chrome Status Bar */}
+      <div className="bg-[#0f172a] px-8 py-2.5 flex items-center justify-between border-t border-white/5 relative z-50">
+         <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+               <span className="text-[9px] font-black text-white/50 uppercase tracking-[0.2em]">Secure Residential Bridge</span>
+            </div>
+            <div className="flex items-center gap-3">
+               <Activity size={12} className="text-slate-500" />
+               <span className="text-[9px] font-black text-white/50 uppercase tracking-[0.2em]">Node CPU: 12%</span>
+            </div>
+         </div>
+         <div className="flex items-center gap-8">
+            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Remote OS: Chromium Enterprise (Linux)</span>
+            <div className="flex items-center gap-3 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
+                <SafeIcon icon={Shield} size={10} className="text-emerald-500" />
+                <span className="text-[9px] font-black text-white font-mono uppercase tracking-widest">{lastUpdate}</span>
+            </div>
+         </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      `}} />
     </div>
   );
 };
+
+// Helper Sub-component for Typing Feedback
+const KeyboardFeedback = ({ chars }: { chars: string[] }) => (
+    <div className="flex items-center gap-3">
+        {chars.map((char, idx) => (
+            <motion.div 
+                key={idx}
+                initial={{ opacity: 0, scale: 0.5, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-black text-lg font-mono shadow-lg border border-white/20"
+            >
+                {char}
+            </motion.div>
+        ))}
+    </div>
+);
 
 export default Browser;

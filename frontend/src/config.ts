@@ -8,7 +8,7 @@ if (import.meta.env.VITE_API_URL) {
 } else if (window.location.hostname.includes('onrender.com') || window.location.hostname.includes('agentskaro.co.in')) {
   rawUrl = RENDER_BACKEND;
 } else {
-  rawUrl = "http://localhost:8000";
+  rawUrl = "http://127.0.0.1:8000";
 }
 
 rawUrl = rawUrl.replace(/\/+$/, "");

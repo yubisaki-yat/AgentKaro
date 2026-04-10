@@ -457,8 +457,9 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative overflow-auto custom-scrollbar bg-slate-50 dark:bg-transparent pt-16 lg:pt-0">
-        <header className="hidden lg:flex sticky top-0 w-full h-16 bg-white/80 dark:bg-[#0a0d14]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 items-center justify-between px-8 z-40 transition-colors duration-300">
+      <main className={`flex-1 relative overflow-auto custom-scrollbar bg-slate-50 dark:bg-transparent ${location.pathname === '/browser' ? 'pt-0' : 'pt-16 lg:pt-0'}`}>
+        {location.pathname !== '/browser' && (
+          <header className="hidden lg:flex sticky top-0 w-full h-16 bg-white/80 dark:bg-[#0a0d14]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 items-center justify-between px-8 z-40 transition-colors duration-300">
            <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                 {location.pathname === '/' ? 'Home' : location.pathname.substring(1).split('/')[0].toUpperCase()}
@@ -476,9 +477,10 @@ const App: React.FC = () => {
                 {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-[#1C4670]" />}
               </button>
            </div>
-        </header>
+          </header>
+        )}
 
-        <div className="relative z-10 p-4 md:p-8 max-w-[1600px] mx-auto min-h-[calc(100vh-64px)]">
+        <div className={`relative z-10 mx-auto min-h-[calc(100vh-64px)] ${location.pathname === '/browser' ? 'p-0 max-w-none' : 'p-4 md:p-8 max-w-[1600px]'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -614,6 +616,30 @@ const App: React.FC = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                               />
                            </div>
+                           {!isRegistering && (
+                             <div className="flex justify-end px-2">
+                               <button 
+                                 type="button"
+                                 onClick={async () => {
+                                   if (!tempEmail) {
+                                     setErrorHeader("Please enter your email first.");
+                                     return;
+                                   }
+                                   setIdentifying(true);
+                                   try {
+                                     const res = await axios.post(`${API_BASE}/forgot-password`, { email: tempEmail });
+                                     setErrorHeader(res.data.message);
+                                   } catch (err) {
+                                     setErrorHeader("Failed to process reset request.");
+                                   }
+                                   setIdentifying(false);
+                                 }}
+                                 className="text-[10px] font-black uppercase tracking-widest text-[#1C4670] dark:text-[#FFA229] hover:underline transition-all"
+                               >
+                                 Forgot Password?
+                               </button>
+                             </div>
+                           )}
                         </div>
 
                         <button 

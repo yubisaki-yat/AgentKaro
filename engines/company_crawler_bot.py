@@ -12,6 +12,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+import json
+import threading
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -28,9 +30,12 @@ class CompanyCrawlerBot:
         self.smtp_password = os.getenv("SMTP_PASSWORD")
         self.resume_path = os.getenv("RESUME_PATH") # User should set this or we find latest in storage/resumes
         self.user_email = os.environ.get("USER_EMAIL", "default")
-        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, 'live_view.jpg')
+        self.bot_id = "crawler"
+        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, f'live_{self.bot_id}.jpg')
         os.makedirs(os.path.dirname(self.screenshot_path), exist_ok=True)
         self.driver = None # Will be set in run()
+        self.running = True
+        self.screenshot_thread = None # Will be started in run()
 
     def _setup_driver(self):
         import sys
@@ -72,12 +77,70 @@ class CompanyCrawlerBot:
             std_opts.add_argument("--disable-gpu")
             return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
-    def _take_screenshot(self, label=""):
+    def _screenshot_loop(self):
+        """Background thread for constant live-view updates."""
+        while self.running:
+            try:
+                if hasattr(self, 'driver') and self.driver:
+                    self._take_screenshot("Background Sync")
+            except:
+                pass
+            time.sleep(1.0) # Update every second in background
+
+    def _take_screenshot(self, context="Auto"):
         try:
             if self.driver:
                 self.driver.save_screenshot(self.screenshot_path)
                 print(f"[LIVE] Snapshot updated: {label}", flush=True)
         except: pass
+
+    def _check_commands(self):
+        """Polls for user commands from the dashboard."""
+        try:
+            cmd_path = os.path.join(os.path.dirname(self.screenshot_path), "commands.json")
+            if os.path.exists(cmd_path):
+                import json
+                with open(cmd_path, "r") as f:
+                    cmds = json.load(f)
+                
+                # Clear for next
+                os.remove(cmd_path)
+                
+                for cmd in cmds:
+                    if cmd["type"] == "click":
+                        x_pct, y_pct = cmd.get("x", 0), cmd.get("y", 0)
+                        width = self.driver.execute_script("return window.innerWidth;")
+                        height = self.driver.execute_script("return window.innerHeight;")
+                        x = int((x_pct / 100) * width)
+                        y = int((y_pct / 100) * height)
+                        print(f"   [INTERACT] Performing remote click at {x}, {y}")
+                        from selenium.webdriver.common.action_chains import ActionChains
+                        ActionChains(self.driver).move_by_offset(x, y).click().perform()
+                        ActionChains(self.driver).move_by_offset(-x, -y).perform()
+                    elif cmd["type"] == "reload":
+                        print("   [INTERACT] Remote reload requested.")
+                        self.driver.refresh()
+                    elif cmd["type"] == "navigate" and cmd.get("url"):
+                        print(f"   [INTERACT] Navigating to: {cmd['url']}")
+                        self.driver.get(cmd["url"])
+                    elif cmd["type"] == "type" and cmd.get("text"):
+                        print(f"   [INTERACT] Typing text: {cmd['text']}")
+                        from selenium.webdriver.common.action_chains import ActionChains
+                        ActionChains(self.driver).send_keys(cmd["text"]).perform()
+                    elif cmd["type"] == "back":
+                        print("   [INTERACT] Remote Back requested.")
+                        self.driver.back()
+                    elif cmd["type"] == "forward":
+                        print("   [INTERACT] Remote Forward requested.")
+                        self.driver.forward()
+                    elif cmd["type"] == "scroll":
+                        dy = cmd.get("delta_y", 0)
+                        print(f"   [INTERACT] Scrolling by {dy}px")
+                        self.driver.execute_script(f"window.scrollBy(0, {dy});")
+                # Immediately take a screenshot after any set of commands
+                self._take_screenshot("After Remote Interaction")
+        except:
+            pass
 
     def find_careers_link(self, driver):
         print(f"   [CRAWL] Searching for careers links on {self.url}...")
@@ -133,14 +196,23 @@ class CompanyCrawlerBot:
 
     def run(self):
         driver = self._setup_driver()
+        self.driver = driver # Store for interaction
+        
+        # Start screenshot thread now that driver is ready
+        self.screenshot_thread = threading.Thread(target=self._screenshot_loop, daemon=True)
+        self.screenshot_thread.start()
         try:
+            self._check_commands()
             careers_url = self.find_careers_link(driver)
             target_url = careers_url if careers_url else self.url
             driver.get(target_url)
+            self._check_commands()
             self._take_screenshot("Crawl Target Page")
             time.sleep(5)
+            self._check_commands()
             
             emails = self.scrape_contacts(driver)
+            self._check_commands()
             self._take_screenshot("Scanning Emails")
             if emails:
                 print(f"   [OUTREACH] Found potential contacts: {emails}")

@@ -55,8 +55,8 @@ def run_dashboard():
     )
     
     print("\nDashboard is live!")
-    print("Frontend: http://localhost:5173")
-    print("API: http://localhost:8000/docs")
+    print("Frontend: http://127.0.0.1:5173")
+    print("API: http://127.0.0.1:8000/docs")
     print("\nPress Ctrl+C to stop both servers.\n")
     
     try:
@@ -64,10 +64,12 @@ def run_dashboard():
             time.sleep(1)
             # Check if processes are still alive
             if backend_proc.poll() is not None:
-                print("Backend processes stopped unexpectedly.")
+                print("\n[CRITICAL] Backend (FastAPI) stopped unexpectedly!")
+                print(f"Exit Code: {backend_proc.poll()}")
                 break
             if frontend_proc.poll() is not None:
-                print("Frontend processes stopped unexpectedly.")
+                print("\n[CRITICAL] Frontend (Vite) stopped unexpectedly!")
+                print(f"Exit Code: {frontend_proc.poll()}")
                 break
     except KeyboardInterrupt:
         print("\nStopping servers...")

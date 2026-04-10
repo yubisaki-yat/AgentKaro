@@ -162,14 +162,15 @@ INTERNSHALA_RUNNER_SCRIPT = PREAMBLE + """
 print("[DEBUG] UI Runner script started.", flush=True)
 roles_env = os.environ.get("BOT_ROLES", "")
 max_applies = int(os.environ.get("BOT_MAX_APPLIES", "10"))
+headless = os.environ.get("BOT_HEADLESS", "false").lower() == "true"
 roles = [r.strip() for r in roles_env.split(",") if r.strip()] if roles_env else None
 
-print(f"[DEBUG] Roles: {roles}, Max Applies: {max_applies}", flush=True)
+print(f"[DEBUG] Roles: {roles}, Max Applies: {max_applies}, Headless: {headless}", flush=True)
 
 from internshala_bot import InternshalaAutoApplyBot
 print("[DEBUG] InternshalaAutoApplyBot class imported.", flush=True)
 try:
-    bot = InternshalaAutoApplyBot(roles=roles, max_applies_per_role=max_applies)
+    bot = InternshalaAutoApplyBot(roles=roles, max_applies_per_role=max_applies, headless=headless)
     print("[DEBUG] Bot instance created successfully.", flush=True)
     bot.start()
     report_success("internshala")
@@ -186,15 +187,16 @@ print("[DEBUG] Naukri UI Runner script started.", flush=True)
 keywords_env = os.environ.get("NAUKRI_KEYWORDS", "Software Engineer")
 location = os.environ.get("NAUKRI_LOCATION", "")
 max_pages = int(os.environ.get("NAUKRI_MAX_PAGES", "10"))
+headless = os.environ.get("BOT_HEADLESS", "false").lower() == "true"
 
 keywords = [k.strip() for k in keywords_env.split(",") if k.strip()] if keywords_env else ["Software Engineer"]
 
-print(f"[DEBUG] Keywords: {keywords}, Location: {location}, Pages: {max_pages}", flush=True)
+print(f"[DEBUG] Keywords: {keywords}, Location: {location}, Pages: {max_pages}, Headless: {headless}", flush=True)
 
 from naukri_bot import NaukriAutoApplyBot
 print("[DEBUG] NaukriAutoApplyBot class imported.", flush=True)
 try:
-    bot = NaukriAutoApplyBot(keywords=keywords, location=location, max_pages=max_pages)
+    bot = NaukriAutoApplyBot(keywords=keywords, location=location, max_pages=max_pages, headless=headless)
     print("[DEBUG] Bot instance created successfully.", flush=True)
     bot.scrape()
     report_success("naukri")
@@ -211,16 +213,17 @@ print("[DEBUG] Indeed UI Runner script started.", flush=True)
 keywords_env = os.environ.get("NAUKRI_KEYWORDS", "Software Engineer")
 location = os.environ.get("NAUKRI_LOCATION", "")
 max_pages = int(os.environ.get("NAUKRI_MAX_PAGES", "3"))
+headless = os.environ.get("BOT_HEADLESS", "false").lower() == "true"
 
 keywords = [k.strip() for k in keywords_env.split(",") if k.strip()] if keywords_env else ["Software Engineer"]
 
-print(f"[DEBUG] Keywords: {keywords}, Location: {location}, Pages: {max_pages}", flush=True)
+print(f"[DEBUG] Keywords: {keywords}, Location: {location}, Pages: {max_pages}, Headless: {headless}", flush=True)
 
 print("[DEBUG] Importing IndeedBot...", flush=True)
 from indeed_bot import IndeedBot
 print("[DEBUG] IndeedBot class imported.", flush=True)
 try:
-    bot = IndeedBot(keywords=keywords, location=location, max_pages=max_pages)
+    bot = IndeedBot(keywords=keywords, location=location, max_pages=max_pages, headless=headless)
     print("[DEBUG] Bot instance created successfully.", flush=True)
     bot.scrape()
     report_success("indeed")
@@ -236,18 +239,19 @@ COMPANY_RUNNER_SCRIPT = PREAMBLE + """
 print("[DEBUG] Company Crawler UI Runner script started.", flush=True)
 company_url = os.environ.get("COMPANY_URL", "")
 keywords_env = os.environ.get("NAUKRI_KEYWORDS", "Software Engineer")
+headless = os.environ.get("BOT_HEADLESS", "false").lower() == "true"
 keywords = [k.strip() for k in keywords_env.split(",") if k.strip()] if keywords_env else ["Software Engineer"]
 
 if not company_url:
     print("[ERROR] No Company URL provided.", flush=True)
     sys.exit(1)
 
-print(f"[DEBUG] Target: {company_url}, Keywords: {keywords}", flush=True)
+print(f"[DEBUG] Target: {company_url}, Keywords: {keywords}, Headless: {headless}", flush=True)
 
 from company_crawler_bot import CompanyCrawlerBot
 print("[DEBUG] CompanyCrawlerBot class imported.", flush=True)
 try:
-    bot = CompanyCrawlerBot(company_url=company_url, keywords=keywords)
+    bot = CompanyCrawlerBot(company_url=company_url, keywords=keywords, headless=headless)
     print("[DEBUG] Bot instance created successfully.", flush=True)
     bot.run()
     report_success("company_crawler")

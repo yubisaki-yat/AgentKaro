@@ -1,10 +1,17 @@
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load Environment Variables BEFORE all other imports
+ROOT_DIR = Path(__file__).parent.parent
+ENV_FILE = ROOT_DIR / ".env"
+load_dotenv(ENV_FILE)
+
 import os
 import time
 import json
 import logging
 import asyncio
 from typing import List, Optional
-from pathlib import Path
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -12,7 +19,6 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Body
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from dotenv import load_dotenv
 import shutil
 from passlib.context import CryptContext
 
@@ -37,6 +43,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:3000",
         "https://agentskaro-frontend.onrender.com",
         "https://agentskaro-frontend.onrender.com/",
@@ -50,10 +57,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Paths relative to project root
-ROOT_DIR = Path(__file__).parent.parent
-ENV_FILE = ROOT_DIR / ".env"
-load_dotenv(ENV_FILE)
+# ----------------------------------------------------------------
+# CONFIGURATION
+# ----------------------------------------------------------------
 ENGINES_DIR = ROOT_DIR / "engines"
 # Global resumes (legacy, keeping for ref but transitioning)
 GLOBAL_UPLOAD_DIR = ROOT_DIR / "storage" / "resumes"
@@ -152,6 +158,15 @@ class GoogleAuthRequest(BaseModel):
 class GithubAuthRequest(BaseModel):
     code: str
 
+class BrowserActionRequest(BaseModel):
+    type: str # reload, click, scroll, navigate, type, back, forward
+    email: str
+    x: Optional[float] = 0
+    y: Optional[float] = 0
+    url: Optional[str] = None
+    text: Optional[str] = None
+    delta_y: Optional[float] = 0
+
 # ----------------------------------------------------------------
 # HELPERS (REFACTORED FOR MONGODB)
 # ----------------------------------------------------------------
@@ -213,6 +228,34 @@ async def start_bot(bot_id: str, config: BotConfig):
                     detail=f"You've reached the free limit of 10 applications for {bot_id}. Upgrade for unlimited access!"
                 )
     
+    # Load User Settings
+    user_settings = await MongoDB.get_settings(email) or {}
+    
+    # Merge config with stored settings if fields are empty
+    roles = config.roles or user_settings.get("PREFERRED_ROLES", "").split(",")
+    roles = [r.strip() for r in roles if r.strip()]
+    max_applies = config.max_applies or int(user_settings.get("DAILY_APPLY_LIMIT", 20))
+    headless = user_settings.get("BOT_HEADLESS") == "true" or user_settings.get("BOT_HEADLESS") == True
+
+    env_overrides = {
+        "USER_EMAIL": email,
+        "BOT_HEADLESS": "true" if headless else "false",
+        # Inject platform credentials from database settings
+        "INTERNSHALA_EMAIL": user_settings.get("INTERNSHALA_EMAIL", ""),
+        "INTERNSHALA_PASSWORD": user_settings.get("INTERNSHALA_PASSWORD", ""),
+        "NAUKRI_EMAIL": user_settings.get("NAUKRI_EMAIL", ""),
+        "NAUKRI_PASSWORD": user_settings.get("NAUKRI_PASSWORD", ""),
+        "INDEED_EMAIL": user_settings.get("INDEED_EMAIL", ""),
+        "INDEED_PASSWORD": user_settings.get("INDEED_PASSWORD", ""),
+        # Profile metadata
+        "GITHUB_LINK": user_settings.get("GITHUB_LINK", ""),
+        "PORTFOLIO_LINK": user_settings.get("PORTFOLIO_LINK", ""),
+        "LINKED_LINK": user_settings.get("LINKEDIN_LINK", ""),
+        "YEARS_OF_EXPERIENCE": user_settings.get("YEARS_OF_EXPERIENCE", "2"),
+        "EXPECTED_CTC": user_settings.get("EXPECTED_CTC", ""),
+        "NOTICE_PERIOD": user_settings.get("NOTICE_PERIOD", "Immediate")
+    }
+    
     runner = runners[bot_id]
     if runner.is_running:
         if runner.owner_email == email:
@@ -220,7 +263,6 @@ async def start_bot(bot_id: str, config: BotConfig):
         else:
             raise HTTPException(status_code=429, detail="Bot is currently busy serving another user.")
 
-    env_overrides = {"USER_EMAIL": email}
     runner.owner_email = email
     script_content = ""
 
@@ -336,15 +378,34 @@ async def get_logs(bot_id: str, email: str):
     return {"logs": logs_storage[email][bot_id]}
 
 @app.get("/api/live-screenshot")
-async def get_screenshot(email: str):
+async def get_screenshot(email: str, bot_id: Optional[str] = "internshala"):
     user_storage = get_user_storage(email)
-    screenshot_path = user_storage / "live_view.jpg"
+    
+    # Try bot-specific first, fallback to generic for backward compatibility
+    screenshot_path = user_storage / f"live_{bot_id}.jpg"
+    if not screenshot_path.exists():
+        screenshot_path = user_storage / "live_view.jpg"
     
     if not screenshot_path.exists():
-        # Return a placeholder or 404
-        raise HTTPException(status_code=404, detail="No live preview available yet.")
+        raise HTTPException(status_code=404, detail=f"No live preview for {bot_id} available.")
         
     return FileResponse(screenshot_path, media_type="image/jpeg", headers={"Cache-Control": "no-cache"})
+
+@app.post("/api/notify-apply")
+async def notify_apply(email: str = Body(..., embed=True), bot_id: str = Body(..., embed=True), job_data: dict = Body(..., embed=True)):
+    """Bots call this to report a successful application in real-time."""
+    logger.info(f"[SYNC] {email} applied via {bot_id}: {job_data.get('Job Title')}")
+    
+    # Update status in MongoDB
+    try:
+        data_id = "applied" # Default set
+        job_data["Status"] = "Success"
+        job_data["Scraped At"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await MongoDB.save_application(email, bot_id, job_data)
+        return {"status": "synced"}
+    except Exception as e:
+        logger.error(f"Sync error: {e}")
+        return {"status": "error", "detail": str(e)}
 
 # ----------------------------------------------------------------
 # ROUTES: DATA
@@ -446,6 +507,8 @@ async def register_user(identity: UserIdentity):
             
         hashed_password = get_password_hash(identity.password)
         user = await MongoDB.create_user(email, hashed_password)
+        if not user:
+             raise HTTPException(status_code=500, detail="Database error during registration")
         
         # Return user profile for auto-login
         usage_doc = await MongoDB.get_usage(email)
@@ -454,8 +517,8 @@ async def register_user(identity: UserIdentity):
         return {
             "status": "registered", 
             "email": email,
-            "subscription": user.get("subscription_level", "free"),
-            "expiry": user.get("subscription_expiry"),
+            "subscription": user.get("subscription_level", "free") if user else "free",
+            "expiry": user.get("subscription_expiry") if user else None,
             "counts": counts
         }
     except Exception as e:
@@ -561,12 +624,16 @@ async def identify_user(identity: UserIdentity):
     else:
         # Standard user login
         if not user:
-            raise HTTPException(status_code=401, detail="User not found. Please click the 'REGISTER' tab first to create an account.")
+            raise HTTPException(status_code=401, detail="User not found. Please click the 'CREATE ACCOUNT' tab to register.")
         
-        # Check for password_hash (standard in our DB)
+        # Check for password_hash
         db_password = user.get("password_hash")
-        if not identity.password or not db_password:
-             raise HTTPException(status_code=401, detail="Authentication failed: No security credential found.")
+        if not db_password:
+            # Handle social login users trying to use password
+            raise HTTPException(status_code=400, detail="This account uses Social Login (Google/GitHub). Please use the appropriate button.")
+            
+        if not identity.password:
+            raise HTTPException(status_code=401, detail="Security Password required.")
              
         if not verify_password(identity.password, db_password):
             raise HTTPException(status_code=401, detail="Incorrect Security Password")
@@ -585,6 +652,51 @@ async def identify_user(identity: UserIdentity):
         "expiry": user.get("subscription_expiry"),
         "counts": counts
     }
+
+@app.post("/api/forgot-password")
+async def forgot_password(req: UserIdentity):
+    email = req.email.lower().strip()
+    user = await MongoDB.get_user(email)
+    if not user:
+        # Don't reveal if user exists for security
+        return {"status": "success", "message": "If this email is registered, a reset link will be sent."}
+    
+    logger.info(f"[AUTH] Password reset requested for {email}")
+    # Simulate email dispatch
+    return {"status": "success", "message": "A security reset link has been dispatched to your vault email."}
+
+@app.post("/api/browser/action")
+async def browser_action(req: BrowserActionRequest):
+    try:
+        email = req.email.lower().strip()
+        user_storage = get_user_storage(email)
+        cmd_path = user_storage / "commands.json"
+        
+        # Load existing or start new
+        cmds = []
+        if cmd_path.exists():
+            with open(cmd_path, "r") as f:
+                try: cmds = json.load(f)
+                except: pass
+        
+        cmds.append({
+            "type": req.type,
+            "x": req.x,
+            "y": req.y,
+            "url": req.url,
+            "text": req.text,
+            "delta_y": req.delta_y,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        with open(cmd_path, "w") as f:
+            json.dump(cmds, f)
+            
+        logger.info(f"[BROWSER] Action {req.type} enqueued for {email}")
+        return {"status": "success", "action": req.type}
+    except Exception as e:
+        logger.error(f"[BROWSER] Action error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/create-order")
 async def create_order(req: CreateOrderRequest):

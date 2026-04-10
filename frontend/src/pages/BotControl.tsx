@@ -4,7 +4,6 @@ import axios from 'axios';
 import { Play, Square, Trash2, Clock, Terminal, Settings, Activity } from 'lucide-react';
 
 import API_BASE from '../config';
-import ChromePreview from '../components/ChromePreview';
 
 
 interface BotControlProps {
@@ -422,7 +421,6 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
               </div>
            </div>
 
-           <ChromePreview email={email} isRunning={running} botId={botId} />
         </div>
 
         {/* Terminal Panel */}

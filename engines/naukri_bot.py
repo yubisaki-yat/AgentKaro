@@ -1,6 +1,9 @@
 import os
 import time
 import random
+import requests
+import json
+import threading
 import pandas as pd
 from datetime import datetime
 from dotenv import load_dotenv
@@ -34,9 +37,21 @@ class NaukriAutoApplyBot:
         
         self.data = []
         self.user_email = os.environ.get("USER_EMAIL", "default")
-        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, 'live_view.jpg')
+        self.bot_id = "naukri"
+        self.screenshot_path = os.path.join(os.path.dirname(__file__), '..', 'storage', 'users', self.user_email, f'live_{self.bot_id}.jpg')
         os.makedirs(os.path.dirname(self.screenshot_path), exist_ok=True)
         self.driver = self._setup_driver()
+        
+        self.running = True
+        self.screenshot_thread = threading.Thread(target=self._screenshot_loop, daemon=True)
+        self.screenshot_thread.start()
+        
+        print(f"   [SUCCESS] Naukri Bot Initialized (User: {self.email})")
+        import sys
+        print("[INIT] Launching Chrome for Naukri...")
+        is_linux = sys.platform.startswith('linux')
+        # Only force headless on Linux (e.g., Render/Docker), allow toggle on Windows
+        force_headless = self.headless if not is_linux else True
 
     def _setup_driver(self):
         import sys
@@ -62,14 +77,30 @@ class NaukriAutoApplyBot:
             opts.add_argument(f"--user-data-dir={profile_path}")
             return opts
 
+        def get_chrome_main_version():
+            """Returns the major version of Chrome installed on Windows."""
+            if os.name != 'nt': return None
+            try:
+                import subprocess
+                cmd = '(Get-Item (Get-ItemProperty "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe")."(default)").VersionInfo.ProductVersion'
+                res = subprocess.check_output(['powershell', '-Command', cmd], text=True).strip()
+                if res and '.' in res:
+                    major = res.split('.')[0]
+                    print(f"   [INIT] Detected Chrome version: {res} (Major: {major})")
+                    return int(major)
+            except:
+                pass
+            return None
+
         # Try Undetected Chromedriver
         try:
-            print("   [DEBUG] Attempting Undetected Chrome (UC)...")
-            return uc.Chrome(options=get_options())
+            detected_version = get_chrome_main_version()
+            print(f"   [DEBUG] Attempting Undetected Chrome (UC)... (Version: {detected_version or 'Auto'})")
+            return uc.Chrome(options=get_options(), version_main=detected_version)
         except Exception as e:
             print(f"   [WARN] UC first attempt failed: {str(e)[:100]}. Retrying...")
             try:
-                return uc.Chrome(options=get_options())
+                return uc.Chrome(options=get_options(), version_main=get_chrome_main_version())
             except Exception as e2:
                 print(f"   [ERROR] UC failed completely: {str(e2)[:100]}. Using standard Selenium fallback...")
                 from selenium import webdriver
@@ -84,12 +115,86 @@ class NaukriAutoApplyBot:
                 std_opts.add_argument("--disable-gpu")
                 return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=std_opts)
 
-    def _take_screenshot(self, label=""):
+    def _check_commands(self):
+        """Polls for user commands from the dashboard."""
+        try:
+            cmd_path = os.path.join(os.path.dirname(self.screenshot_path), "commands.json")
+            if os.path.exists(cmd_path):
+                import json
+                with open(cmd_path, "r") as f:
+                    cmds = json.load(f)
+                
+                # Clear for next
+                os.remove(cmd_path)
+                
+                for cmd in cmds:
+                    if cmd["type"] == "click":
+                        x_pct, y_pct = cmd.get("x", 0), cmd.get("y", 0)
+                        # Get viewport size
+                        width = self.driver.execute_script("return window.innerWidth;")
+                        height = self.driver.execute_script("return window.innerHeight;")
+                        x = int((x_pct / 100) * width)
+                        y = int((y_pct / 100) * height)
+                        print(f"   [INTERACT] Performing remote click at {x}, {y}")
+                        from selenium.webdriver.common.action_chains import ActionChains
+                        ActionChains(self.driver).move_by_offset(x, y).click().perform()
+                        # Reset for next action
+                        ActionChains(self.driver).move_by_offset(-x, -y).perform()
+                    elif cmd["type"] == "reload":
+                        print("   [INTERACT] Remote reload requested.")
+                        self.driver.refresh()
+                    elif cmd["type"] == "navigate" and cmd.get("url"):
+                        print(f"   [INTERACT] Navigating to: {cmd['url']}")
+                        self.driver.get(cmd["url"])
+                    elif cmd["type"] == "type" and cmd.get("text"):
+                        print(f"   [INTERACT] Typing text: {cmd['text']}")
+                        from selenium.webdriver.common.action_chains import ActionChains
+                        ActionChains(self.driver).send_keys(cmd["text"]).perform()
+                    elif cmd["type"] == "back":
+                        print("   [INTERACT] Remote Back requested.")
+                        self.driver.back()
+                    elif cmd["type"] == "forward":
+                        print("   [INTERACT] Remote Forward requested.")
+                        self.driver.forward()
+                    elif cmd["type"] == "scroll":
+                        dy = cmd.get("delta_y", 0)
+                        print(f"   [INTERACT] Scrolling by {dy}px")
+                        self.driver.execute_script(f"window.scrollBy(0, {dy});")
+                # Immediately take a screenshot after any set of commands
+                self._take_screenshot("After Remote Interaction")
+        except Exception as e:
+            pass
+
+    def _screenshot_loop(self):
+        """Background thread for constant live-view updates."""
+        while self.running:
+            try:
+                if hasattr(self, 'driver') and self.driver:
+                    self._take_screenshot("Background Sync")
+            except:
+                pass
+            time.sleep(1.0) # Update every second in background
+
+    def _take_screenshot(self, context="Auto"):
         try:
             if self.driver:
                 self.driver.save_screenshot(self.screenshot_path)
-                print(f"[LIVE] Snapshot updated: {label}", flush=True)
+                print(f"[LIVE] Snapshot updated: {context}", flush=True)
         except: pass
+
+    def _notify_sync(self, job_data):
+        """Notifies the backend about a successful application in real-time."""
+        try:
+            api_url = "http://localhost:8000/api/notify-apply"
+            payload = {
+                "email": self.user_email,
+                "bot_id": self.bot_id,
+                "job_data": job_data
+            }
+            requests.post(api_url, json=payload, timeout=5)
+            print(f"   [SYNC] Application synced to dashboard: {job_data.get('Job Title')}", flush=True)
+        except Exception as e:
+            print(f"   [SYNC ERROR] Failed to notify dashboard: {e}", flush=True)
 
     def login(self):
         if not self.email or not self.password:
@@ -151,20 +256,41 @@ class NaukriAutoApplyBot:
                         
                     self.driver.execute_script("arguments[0].click();", btn)
                     applied = True
+                    self._take_screenshot("Apply Button Clicked")
                     print("   [CLICK] Apply button clicked.", flush=True)
                     break
                 except: continue
                 
             if applied:
                 time.sleep(5)
+                # MODAL HANDLING: Look for common "Easy Apply" / "Submit" confirmation buttons
+                confirmation_selectors = [
+                    (By.XPATH, "//button[contains(text(), 'Submit')]"),
+                    (By.XPATH, "//button[contains(text(), 'Apply Now')]"),
+                    (By.CSS_SELECTOR, "button.submit-button"),
+                    (By.CSS_SELECTOR, "button.confirm-button")
+                ]
+                for selector in confirmation_selectors:
+                    try:
+                        conf_btn = self.driver.find_element(*selector)
+                        if conf_btn.is_displayed():
+                            conf_btn.click()
+                            print("   [CLICK] Confirmation modal button clicked.", flush=True)
+                            self._take_screenshot("Modal Confirmed")
+                            time.sleep(3)
+                    except: pass
+
                 # Check for success message or page change
-                if "applied" in self.driver.page_source.lower():
+                success_terms = ["applied", "success", "thank you", "received"]
+                page_source = self.driver.page_source.lower()
+                if any(term in page_source for term in success_terms):
                     print("   [SUCCESS] Applied successfully!", flush=True)
                     return "Success"
                 return "Applied/Review"
             
             return "Skipped/Applied"
-        except:
+        except Exception as e:
+            print(f"   [ERROR] Apply failed: {e}", flush=True)
             return "Error"
 
     def scrape(self):
@@ -223,13 +349,18 @@ class NaukriAutoApplyBot:
                             
                         status = self.apply_to_job(link)
                         
-                        self.data.append({
+                        job_entry = {
                             "Job Title": title,
                             "Company": comp,
                             "Link": link,
                             "Status": status,
                             "Scraped At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        })
+                        }
+                        self.data.append(job_entry)
+                        
+                        # REAL-TIME SYNC
+                        if status == "Success":
+                            self._notify_sync(job_entry)
                         
                         # Save every 5 items to prevent data loss
                         if i % 5 == 0:
