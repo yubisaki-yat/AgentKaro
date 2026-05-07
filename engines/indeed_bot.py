@@ -3,6 +3,7 @@ import time
 import random
 import threading
 import pandas as pd
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 import undetected_chromedriver as uc
@@ -113,8 +114,23 @@ class IndeedBot:
         try:
             if self.driver:
                 self.driver.save_screenshot(self.screenshot_path)
-                print(f"[LIVE] Snapshot updated: {label}", flush=True)
+                print(f"[LIVE] Snapshot updated: {context}", flush=True)
         except: pass
+
+    def _notify_sync(self, job_data):
+        """Notifies the backend about a successful application in real-time."""
+        try:
+            api_url = "http://localhost:8000/api/notify-apply"
+            payload = {
+                "email": self.user_email,
+                "bot_id": self.bot_id,
+                "job_data": job_data
+            }
+            requests.post(api_url, json=payload, timeout=5)
+            print(f"   [SYNC] Application synced to dashboard: {job_data.get('Job Title')}", flush=True)
+        except Exception as e:
+            print(f"   [SYNC ERROR] Failed to notify dashboard: {e}", flush=True)
+
 
     def _check_commands(self):
         """Polls for user commands from the dashboard."""
@@ -249,14 +265,17 @@ class IndeedBot:
                     
                     if not link: continue
                     
-                    self.data.append({
+                    job_entry = {
                         "Job Title": title,
                         "Company": comp,
                         "Link": link,
                         "Apply Type": "Easy Apply" if easy_apply else "Direct",
                         "Status": "Scraped",
                         "Scraped At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    }
+                    
+                    self.data.append(job_entry)
+                    self._notify_sync(job_entry)
                     
                     # Save every 5 items
                     if i % 5 == 0:

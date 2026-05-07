@@ -345,8 +345,9 @@ const App: React.FC = () => {
         fixed lg:relative inset-y-0 left-0 w-72 bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 flex flex-col z-[80] transition-transform duration-300 ease-in-out lg:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-7">
-          <div className="flex items-center gap-4 mb-10 group">
+        {/* Sidebar Header: Logo */}
+        <div className="p-7 pb-2">
+          <div className="flex items-center gap-4 mb-6 group">
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-[#1C4670] to-[#2A6BA3] rounded-[18px] flex items-center justify-center shadow-xl shadow-slate-200 dark:shadow-none group-hover:rotate-12 transition-transform duration-500">
                 <Shield className="w-7 h-7 text-white" strokeWidth={2.5} />
@@ -360,97 +361,141 @@ const App: React.FC = () => {
               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#1C4670]/80 dark:text-slate-400 mt-1.5 block">Legally Smart Automation</span>
             </div>
           </div>
+        </div>
 
-          <nav className="space-y-1.5">
+        {/* Sidebar Body: Scrollable Navigation */}
+        <div className="flex-1 overflow-y-auto px-6 py-2 scrollbar-none hover:scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent">
+          <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
-                    flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group
-                    ${location.pathname === item.path 
-                      ? 'bg-[#1C4670] text-white shadow-lg shadow-[#1C4670]/25' 
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-[#1C4670] dark:hover:text-[#FFA229]'
+                    flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 group relative overflow-hidden
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-[#1C4670] to-[#2A6BA3] text-white shadow-md shadow-[#1C4670]/20' 
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/40 hover:text-[#1C4670] dark:hover:text-[#FFA229]'
                     }
                   `}
                 >
-                  <Icon className={`w-5 h-5 ${location.pathname === item.path ? 'animate-pulse' : 'group-hover:scale-110 transition-transform'}`} />
-                  <span className="flex-1 tracking-tight">{item.name}</span>
-                  {location.pathname === item.path && <ChevronRight className="w-4 h-4 opacity-50" />}
+                  <div className={`
+                    flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300
+                    ${isActive ? 'bg-white/10' : 'group-hover:bg-[#1C4670]/5 dark:group-hover:bg-[#FFA229]/5'}
+                  `}>
+                    <Icon className={`w-4.5 h-4.5 ${isActive ? 'scale-110' : 'group-hover:scale-110 transition-transform'}`} />
+                  </div>
+                  <span className="flex-1 tracking-tight font-semibold">{item.name}</span>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="active-indicator"
+                      className="absolute right-2 w-1.5 h-1.5 bg-[#FFA229] rounded-full shadow-[0_0_8px_#FFA229]" 
+                    />
+                  )}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="mt-auto p-6 space-y-4">
+        {/* Sidebar Footer: Status & Account */}
+        <div className="p-5 border-t border-slate-100 dark:border-slate-800/50 space-y-3 bg-white/50 dark:bg-[#0f172a]/50 backdrop-blur-xl">
            {/* Bot Status Summary */}
-           <div className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-white/5">
-              <div className="flex items-center justify-between mb-4">
+           <div className="p-3.5 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-white/5">
+              <div className="flex items-center justify-between mb-2.5">
                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Node Status</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">System Pulse</span>
                  </div>
                  {isPremium && (
-                    <span className="px-2 py-0.5 bg-[#FFA229]/10 text-[#FFA229] text-[10px] font-black uppercase tracking-widest rounded-lg border border-[#FFA229]/20">
-                      Lifetime
-                    </span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-[#FFA229]/10 text-[#FFA229] text-[8px] font-black uppercase tracking-widest rounded-md border border-[#FFA229]/20">
+                      <Sparkles className="w-2 h-2" />
+                      Pro
+                    </div>
                  )}
               </div>
               
               {!email ? (
-                <div className="space-y-3">
-                  <p className="text-[10px] text-slate-500 leading-relaxed italic">You are currently in view-only guest mode.</p>
+                <div className="space-y-2">
+                  <p className="text-[9px] text-slate-400 leading-tight italic">Authentication required for bot access.</p>
                   <button 
                     onClick={() => setShowIdentityModal(true)}
-                    className="w-full py-2 bg-[#1C4670] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-[#1C4670]/20"
+                    className="w-full py-2 bg-[#1C4670] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:shadow-lg hover:shadow-[#1C4670]/10 transition-all active:scale-[0.98]"
                   >
-                    Get Started / Login
+                    Login Portal
                   </button>
                 </div>
               ) : (
-                <>
-                  <div className="flex items-center gap-3 mb-2">
-                     <Activity className="w-4 h-4 text-emerald-500" />
-                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Status</span>
-                  </div>
-                  <div className="space-y-2">
-                     <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-600 dark:text-slate-300">Internshala:</span>
-                        <span className={status.internshala?.running ? 'text-emerald-600 dark:text-green-400 font-medium' : 'text-slate-400 dark:text-slate-500'}>
-                          {status.internshala?.running ? 'Running' : 'Stopped'}
-                        </span>
-                     </div>
-                     <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-600 dark:text-slate-300">Naukri:</span>
-                        <span className={status.naukri?.running ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-400 dark:text-slate-500'}>
-                          {status.naukri?.running ? 'Running' : 'Stopped'}
-                        </span>
-                     </div>
-                     {!isPremium && (
-                       <button 
-                         onClick={() => setShowSubscriptionModal(true)}
-                         className="w-full mt-3 py-2 bg-[#FFA229] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-[#FFA229]/20"
-                       >
-                         Upgrade Now
-                       </button>
-                     )}
-                  </div>
-                </>
+                <div className="flex items-center">
+                  {(() => {
+                    const activeBots = [
+                      { id: 'internshala', color: 'bg-emerald-500', name: 'Int' },
+                      { id: 'naukri', color: 'bg-[#1C4670]', name: 'Nau' },
+                      { id: 'indeed', color: 'bg-[#FFA229]', name: 'Ind' }
+                    ].filter(bot => status[bot.id]?.running);
+
+                    if (activeBots.length === 0) {
+                      return (
+                        <div className="flex items-center gap-2 py-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 opacity-50" />
+                          <span className="text-[8px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-tight italic">No bots active</span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex flex-wrap gap-3">
+                        {activeBots.map(bot => (
+                          <div key={bot.id} className="flex items-center gap-1.5 group/bot cursor-help" title={`${bot.id.toUpperCase()} is running`}>
+                            <div className="relative">
+                              <div className={`w-1.5 h-1.5 rounded-full ${bot.color}`} />
+                              <div className={`absolute inset-0 rounded-full ${bot.color} blur-[2px] opacity-60 animate-pulse`} />
+                            </div>
+                            <span className="text-[8px] font-black uppercase tracking-tight text-slate-500 dark:text-slate-400">{bot.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
            </div>
+
+            {/* Logout/Account Section */}
             {email && (
-              <div className="mt-6 flex items-center justify-center gap-6 text-slate-400 dark:text-slate-500 pb-2">
-                 <button 
-                   onClick={handleLogout}
-                   className="flex items-center gap-2 hover:text-red-500 transition-colors group"
-                 >
-                   <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                   <span className="text-[10px] font-bold uppercase tracking-wider">Sign Out</span>
-                 </button>
+              <div className="flex flex-col gap-2">
+                 <div className="flex items-center gap-3 px-1 py-1 group/account">
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center border border-slate-200 dark:border-white/10 group-hover/account:rotate-3 transition-transform">
+                         <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                      </div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-[#0f172a]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                       <p className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">{email.split('@')[0]}</p>
+                       <p className="text-[8px] text-slate-400 uppercase tracking-tighter font-medium">{subscription} Member</p>
+                    </div>
+                    <button 
+                      onClick={handleLogout}
+                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                      title="Sign Out"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                 </div>
+                 
+                 {!isPremium && (
+                   <button 
+                     onClick={() => setShowSubscriptionModal(true)}
+                     className="w-full py-2 bg-gradient-to-r from-[#FFA229] to-[#E89218] text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 hover:-translate-y-0.5 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group/upgrade"
+                   >
+                     <Sparkles className="w-3 h-3 group-hover:rotate-12 transition-transform" />
+                     Upgrade Pro
+                   </button>
+                 )}
               </div>
             )}
         </div>

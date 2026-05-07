@@ -123,22 +123,7 @@ class InternshalaAutoApplyBot:
             cmd_path = os.path.join(os.path.dirname(self.screenshot_path), "commands.json")
             if os.path.exists(cmd_path):
                 with open(cmd_path, "r") as f:
-                        job_entry = {
-                            "Job Title": title,
-                            "Company": comp,
-                            "Link": link,
-                            "Status": status,
-                            "Applied At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }
-                        self.applied_links.append(job_entry)
-                        
-                        # Real-time dashboard sync
-                        if status == "Success":
-                            self._notify_sync(job_entry)
-                        
-                        # Save every 5 attempts
-                        if i % 3 == 0:
-                            self._save_applied_links()
+                    cmds = json.load(f)
                 
                 # Clear for next
                 os.remove(cmd_path)
@@ -326,6 +311,8 @@ class InternshalaAutoApplyBot:
 
     def save_app(self, title, company, link, status):
         new_row = {"Job Title": title, "Company": company, "Link": link, "Status": status, "Applied At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        if status == "Success":
+            self._notify_sync(new_row)
         df = pd.DataFrame([new_row])
         if os.path.exists(self.output_file):
             try:

@@ -1,158 +1,222 @@
 import os
+import json
+import psycopg2
+from psycopg2.extras import RealDictCursor, Json
 from datetime import datetime
-from supabase import create_client, Client
 from typing import Optional, List
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# Lazy Supabase Client Initialization
-_supabase_instance: Optional[Client] = None
-
-def get_supabase_client() -> Optional[Client]:
-    global _supabase_instance
-    if _supabase_instance is not None:
-        return _supabase_instance
-    
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE") or os.getenv("SUPABASE_KEY")
-    
-    if not url or not key:
-        print("[WARNING] Supabase credentials missing (URL or Key)!")
+# Database Connection Helper
+def get_db_connection():
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        # Fallback for local development or if not set yet
+        print("[WARNING] DATABASE_URL missing! Please set it in .env")
         return None
-        
+    
     try:
-        # Sanitize keys (remove whitespace/quotes if user pasted them poorly)
-        url = url.strip().strip("'").strip('"')
-        key = key.strip().strip("'").strip('"')
-        
-        _supabase_instance = create_client(url, key)
-        print(f"[DB] Supabase initialized for: {url}")
-        return _supabase_instance
+        conn = psycopg2.connect(url, cursor_factory=RealDictCursor)
+        conn.autocommit = True
+        return conn
     except Exception as e:
-        print(f"[CRITICAL ERROR] Failed to initialize Supabase client: {e}")
+        print(f"[CRITICAL ERROR] Failed to connect to PostgreSQL: {e}")
         return None
 
 class MongoDB:
     """
-    Supabase Implementation (Kept name 'MongoDB' to avoid breaking main.py imports)
+    PostgreSQL Implementation (Kept name 'MongoDB' to avoid breaking main.py imports)
     """
 
     @staticmethod
     async def get_user(email: str):
-        client = get_supabase_client()
-        if not client: return None
-        email = email.lower().strip()
-        response = client.table("users").select("*").eq("email", email).execute()
-        return response.data[0] if response.data else None
+        conn = get_db_connection()
+        if not conn: return None
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+                return cur.fetchone()
+        except Exception as e:
+            print(f"[DB ERROR] get_user failed: {e}")
+            return None
+        finally:
+            conn.close()
 
     @staticmethod
     async def create_user(email: str, hashed_password: str = None, source: str = "local"):
-        client = get_supabase_client()
-        if not client: 
-            print("[ERROR] Supabase client not initialized!")
-            return None
+        conn = get_db_connection()
+        if not conn: return None
         try:
-            email = email.lower().strip()
-            new_user = {
-                "email": email,
-                "password_hash": hashed_password,
-                "source": source,
-                "subscription_level": "free",
-                "is_active": True,
-                "created_at": datetime.utcnow().isoformat()
-            }
-            res = client.table("users").insert(new_user).execute()
-            if not res.data:
-                print(f"[DB] Insert failed for {email}: No data returned")
-                return None
-            
-            # These are secondary, we can ignore failure here or log it
-            try: client.table("usage").insert({"email": email}).execute()
-            except: pass
-            
-            try: client.table("settings").insert({"email": email, "data": {}}).execute()
-            except: pass
-            
-            return new_user
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                new_user = {
+                    "email": email,
+                    "password_hash": hashed_password,
+                    "source": source,
+                    "subscription_level": "free",
+                    "is_active": True,
+                    "created_at": datetime.utcnow()
+                }
+                
+                # Check if user exists first to avoid conflict
+                cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+                existing = cur.fetchone()
+                if existing:
+                    return existing
+
+                columns = new_user.keys()
+                values = [new_user[column] for column in columns]
+                insert_query = f"INSERT INTO users ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))}) RETURNING *"
+                
+                cur.execute(insert_query, values)
+                user_row = cur.fetchone()
+                
+                # Initialize usage and settings
+                cur.execute("INSERT INTO usage (email, counts) VALUES (%s, %s) ON CONFLICT (email) DO NOTHING", (email, Json({})))
+                cur.execute("INSERT INTO settings (email, data) VALUES (%s, %s) ON CONFLICT (email) DO NOTHING", (email, Json({})))
+                
+                return user_row
         except Exception as e:
             print(f"[DB ERROR] create_user failed for {email}: {e}")
             return None
+        finally:
+            conn.close()
 
     @staticmethod
     async def update_subscription(email: str, level: str, expiry: datetime = None):
-        client = get_supabase_client()
-        if not client: return
-        email = email.lower().strip()
-        update_data = {"subscription_level": level}
-        if expiry:
-            update_data["subscription_expiry"] = expiry.isoformat()
-        
-        client.table("users").update(update_data).eq("email", email).execute()
+        conn = get_db_connection()
+        if not conn: return
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                if expiry:
+                    cur.execute("UPDATE users SET subscription_level = %s, subscription_expiry = %s WHERE email = %s", (level, expiry, email))
+                else:
+                    cur.execute("UPDATE users SET subscription_level = %s WHERE email = %s", (level, email))
+        except Exception as e:
+            print(f"[DB ERROR] update_subscription failed: {e}")
+        finally:
+            conn.close()
 
     @staticmethod
     async def get_usage(email: str):
-        client = get_supabase_client()
-        if not client: return None
-        email = email.lower().strip()
-        response = client.table("usage").select("*").eq("email", email).execute()
-        return response.data[0] if response.data else None
+        conn = get_db_connection()
+        if not conn: return None
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                cur.execute("SELECT * FROM usage WHERE email = %s", (email,))
+                return cur.fetchone()
+        except Exception as e:
+            print(f"[DB ERROR] get_usage failed: {e}")
+            return None
+        finally:
+            conn.close()
 
     @staticmethod
     async def increment_usage(email: str, platform: str):
-        client = get_supabase_client()
-        if not client: return
-        email = email.lower().strip()
-        
-        # Get current counts
-        current = await MongoDB.get_usage(email)
-        if not current: return
-        
-        counts = current.get("counts", {})
-        counts[platform] = counts.get(platform, 0) + 1
-        
-        client.table("usage").update({
-            "counts": counts, 
-            "last_updated": datetime.utcnow().isoformat()
-        }).eq("email", email).execute()
+        conn = get_db_connection()
+        if not conn: return
+        try:
+            # Atomic increment in Postgres
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                
+                # Get current counts first or use jsonb_set for atomic update if using jsonb
+                # For simplicity with RealDictCursor and standard JSON:
+                cur.execute("SELECT counts FROM usage WHERE email = %s", (email,))
+                row = cur.fetchone()
+                counts = row['counts'] if row and row['counts'] else {}
+                if isinstance(counts, str): counts = json.loads(counts)
+                
+                counts[platform] = counts.get(platform, 0) + 1
+                
+                cur.execute(
+                    "UPDATE usage SET counts = %s, last_updated = %s WHERE email = %s",
+                    (Json(counts), datetime.utcnow(), email)
+                )
+        except Exception as e:
+            print(f"[DB ERROR] increment_usage failed: {e}")
+        finally:
+            conn.close()
 
     @staticmethod
     async def get_settings(email: str):
-        client = get_supabase_client()
-        if not client: return {}
-        email = email.lower().strip()
-        response = client.table("settings").select("data").eq("email", email).execute()
-        return response.data[0]["data"] if response.data else {}
+        conn = get_db_connection()
+        if not conn: return {}
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                cur.execute("SELECT data FROM settings WHERE email = %s", (email,))
+                row = cur.fetchone()
+                return row['data'] if row and row['data'] else {}
+        except Exception as e:
+            print(f"[DB ERROR] get_settings failed: {e}")
+            return {}
+        finally:
+            conn.close()
 
     @staticmethod
     async def save_settings(email: str, data: dict):
-        client = get_supabase_client()
-        if not client: return
-        email = email.lower().strip()
-        client.table("settings").upsert({
-            "email": email, 
-            "data": data, 
-            "updated_at": datetime.utcnow().isoformat()
-        }).execute()
+        conn = get_db_connection()
+        if not conn: return
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                cur.execute(
+                    "INSERT INTO settings (email, data, updated_at) VALUES (%s, %s, %s) "
+                    "ON CONFLICT (email) DO UPDATE SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at",
+                    (email, Json(data), datetime.utcnow())
+                )
+        except Exception as e:
+            print(f"[DB ERROR] save_settings failed: {e}")
+        finally:
+            conn.close()
 
     @staticmethod
     async def add_application(email: str, app_data: dict):
-        client = get_supabase_client()
-        if not client: return
-        email = email.lower().strip()
-        app_data["email"] = email
-        app_data["applied_at"] = datetime.utcnow().isoformat()
-        client.table("applications").insert(app_data).execute()
+        conn = get_db_connection()
+        if not conn: return
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                app_data["email"] = email
+                if "applied_at" not in app_data:
+                    app_data["applied_at"] = datetime.utcnow()
+                
+                columns = app_data.keys()
+                values = [app_data[column] if not isinstance(app_data[column], dict) else Json(app_data[column]) for column in columns]
+                
+                insert_query = f"INSERT INTO applications ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(columns))})"
+                cur.execute(insert_query, values)
+        except Exception as e:
+            print(f"[DB ERROR] add_application failed: {e}")
+        finally:
+            conn.close()
 
     @staticmethod
     async def get_applications(email: str, platform: str = None):
-        client = get_supabase_client()
-        if not client: return []
-        email = email.lower().strip()
-        query = client.table("applications").select("*").eq("email", email)
-        if platform:
-            query = query.eq("platform", platform)
-        
-        response = query.order("applied_at", desc=True).limit(100).execute()
-        return response.data if response.data else []
+        conn = get_db_connection()
+        if not conn: return []
+        try:
+            with conn.cursor() as cur:
+                email = email.lower().strip()
+                if platform:
+                    cur.execute(
+                        "SELECT * FROM applications WHERE email = %s AND platform = %s ORDER BY applied_at DESC LIMIT 100",
+                        (email, platform)
+                    )
+                else:
+                    cur.execute(
+                        "SELECT * FROM applications WHERE email = %s ORDER BY applied_at DESC LIMIT 100",
+                        (email,)
+                    )
+                return cur.fetchall()
+        except Exception as e:
+            print(f"[DB ERROR] get_applications failed: {e}")
+            return []
+        finally:
+            conn.close()

@@ -401,7 +401,8 @@ async def notify_apply(email: str = Body(..., embed=True), bot_id: str = Body(..
         data_id = "applied" # Default set
         job_data["Status"] = "Success"
         job_data["Scraped At"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        await MongoDB.save_application(email, bot_id, job_data)
+        job_data["platform"] = bot_id
+        await MongoDB.add_application(email, job_data)
         return {"status": "synced"}
     except Exception as e:
         logger.error(f"Sync error: {e}")
@@ -414,9 +415,6 @@ async def notify_apply(email: str = Body(..., embed=True), bot_id: str = Body(..
 async def get_data(data_id: str, email: str):
     user_storage = get_user_storage(email)
     path = user_storage / "data" / f"{data_id}_applied.xlsx"
-
-    if not path.exists():
-        return {"data": []}
 
     try:
         data = await MongoDB.get_applications(email, data_id)
@@ -497,9 +495,11 @@ async def get_config():
 async def register_user(identity: UserIdentity):
     try:
         email = identity.email.lower().strip()
+        print(f"[AUTH] Registering user: {email}")
         
         existing_user = await MongoDB.get_user(email)
         if existing_user:
+            print(f"[AUTH] User {email} already exists")
             raise HTTPException(status_code=400, detail="User already exists. Please login.")
         
         if not identity.password:
@@ -508,8 +508,10 @@ async def register_user(identity: UserIdentity):
         hashed_password = get_password_hash(identity.password)
         user = await MongoDB.create_user(email, hashed_password)
         if not user:
+             print(f"[AUTH] Database error creating user {email}")
              raise HTTPException(status_code=500, detail="Database error during registration")
         
+        print(f"[AUTH] User {email} registered successfully")
         # Return user profile for auto-login
         usage_doc = await MongoDB.get_usage(email)
         counts = usage_doc.get("counts", {}) if usage_doc else {}
@@ -529,9 +531,11 @@ async def register_user(identity: UserIdentity):
 async def google_login(req: GoogleAuthRequest):
     try:
         # Verify Token
+        print(f"[AUTH] Verifying Google Token for Client ID: {GOOGLE_CLIENT_ID[:10]}...")
         idinfo = id_token.verify_oauth2_token(req.token, google_requests.Request(), GOOGLE_CLIENT_ID)
         
         email = idinfo['email'].lower().strip()
+        print(f"[AUTH] Google Token verified for: {email}")
         user = await MongoDB.get_user(email)
         
         if not user:
@@ -611,10 +615,12 @@ async def github_login(req: GithubAuthRequest):
 @app.post("/api/identify")
 async def identify_user(identity: UserIdentity):
     email = identity.email.lower().strip()
+    print(f"[AUTH] Login attempt for: {email}")
     user = await MongoDB.get_user(email)
     
     # Special case for Admin
     if email in ADMIN_EMAILS:
+        print(f"[AUTH] Admin login attempt: {email}")
         if not identity.password or identity.password != ADMIN_PASSWORD:
             raise HTTPException(status_code=401, detail="Incorrect Admin Password")
         if not user:
@@ -624,10 +630,12 @@ async def identify_user(identity: UserIdentity):
     else:
         # Standard user login
         if not user:
+            print(f"[AUTH] User not found: {email}")
             raise HTTPException(status_code=401, detail="User not found. Please click the 'CREATE ACCOUNT' tab to register.")
         
         # Check for password_hash
         db_password = user.get("password_hash")
+        print(f"[AUTH] Found user {email}, has password: {bool(db_password)}")
         if not db_password:
             # Handle social login users trying to use password
             raise HTTPException(status_code=400, detail="This account uses Social Login (Google/GitHub). Please use the appropriate button.")
@@ -636,7 +644,10 @@ async def identify_user(identity: UserIdentity):
             raise HTTPException(status_code=401, detail="Security Password required.")
              
         if not verify_password(identity.password, db_password):
+            print(f"[AUTH] Password mismatch for {email}")
             raise HTTPException(status_code=401, detail="Incorrect Security Password")
+    
+    print(f"[AUTH] Login successful for: {email}")
     
     usage_doc = await MongoDB.get_usage(email)
     counts = usage_doc.get("counts", {}) if usage_doc else {}
