@@ -17,7 +17,7 @@ interface KpiCardProps {
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, color, delay, loading }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ delay }}
@@ -90,31 +90,31 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
   }, [email, fetchData]);
 
   const stats = [
-    { 
-      title: "Applications Sent", 
-      value: data.internshala.length, 
-      icon: Briefcase, 
+    {
+      title: "Applications Sent",
+      value: data.internshala.length,
+      icon: Briefcase,
       color: "bg-[#1C4670]",
       delay: 0.1
     },
-    { 
-      title: "Success Rate", 
-      value: `${Math.round((data.internshala.filter((i: JobData) => i.Status === 'Success').length / (data.internshala.length || 1)) * 100)}%`, 
-      icon: CheckCircle, 
+    {
+      title: "Success Rate",
+      value: `${Math.round((data.internshala.filter((i: JobData) => i.Status === 'Success').length / (data.internshala.length || 1)) * 100)}%`,
+      icon: CheckCircle,
       color: "bg-emerald-500",
       delay: 0.2
     },
-    { 
-      title: "Indeed Scrapes", 
-      value: data.indeed.length, 
-      icon: Search, 
+    {
+      title: "Indeed Scrapes",
+      value: data.indeed.length,
+      icon: Search,
       color: "bg-cyan-500",
       delay: 0.3
     },
-    { 
-      title: "Crawler Leads", 
-      value: data.company_crawler.length, 
-      icon: Building, 
+    {
+      title: "Crawler Leads",
+      value: data.company_crawler.length,
+      icon: Building,
       color: "bg-orange-500",
       delay: 0.4
     }
@@ -123,7 +123,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
   if (!email) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[60vh]">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card p-12 text-center max-w-lg"
@@ -135,7 +135,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
           <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
             You are currently browsing in <strong>Guest Mode</strong>. Connect your identity to start using our autonomous job automation bots and track your applications in real-time.
           </p>
-          <button 
+          <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-login'))}
             className="px-8 py-3 bg-[#FFA229] text-white rounded-xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-transform shadow-lg shadow-[#FFA229]/20"
           >
@@ -163,8 +163,8 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
             Signed in as <span className="font-semibold text-slate-800 dark:text-slate-200">{email}</span>
           </p>
         </div>
-        <button 
-          onClick={fetchData} 
+        <button
+          onClick={fetchData}
           disabled={loading}
           className="flex items-center gap-2 px-6 py-2.5 glass-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 text-slate-700 dark:text-slate-200"
         >
@@ -178,54 +178,54 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
       </div>
 
       {/* Subscription Status Card */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.45 }}
         className="glass-card p-8 bg-gradient-to-br from-[#1C4670]/5 to-[#FFA229]/5 border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFA229]/10 blur-[80px] rounded-full translate-x-1/4 -translate-y-1/2 pointer-events-none" />
-        
-           <div className="flex-1 space-y-4">
-              <div className="flex items-center gap-3">
-                 <div className="p-2 bg-[#1C4670] rounded-lg shadow-lg shadow-[#1C4670]/20">
-                    <Shield className="w-5 h-5 text-white" />
-                 </div>
-                 <h3 className="text-xl font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Subscription Insights</h3>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed text-sm">
-                You are currently on the <span className="font-black text-[#FFA229] uppercase tracking-wider">{subscription} Plan</span>. 
-                {subscription === 'free' ? " Upgrade to premium to remove all application limits, unlock AI Resume Search, and access priority support." : " Enjoy your unlimited access, early feature access, and premium priority support!"}
-              </p>
-           </div>
+
+        <div className="flex-1 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#1C4670] rounded-lg shadow-lg shadow-[#1C4670]/20">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-xl font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Subscription Insights</h3>
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed text-sm">
+            You are currently on the <span className="font-black text-[#FFA229] uppercase tracking-wider">{subscription} Plan</span>.
+            {subscription === 'free' ? " Upgrade to premium to remove all application limits, unlock AI Resume Search, and access priority support." : " Enjoy your unlimited access, early feature access, and premium priority support!"}
+          </p>
+        </div>
 
         <div className="w-full md:w-80 space-y-4">
-           <div className="flex justify-between items-end">
-              <div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Usage Tracker</span>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">{(data.internshala?.length || 0)} <span className="text-slate-400 font-medium text-sm">/ 10 Applications</span></span>
-              </div>
-              <span className={`text-xs font-black uppercase ${subscription !== 'free' ? 'text-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'text-rose-500' : (data.internshala?.length || 0) >= 8 ? 'text-[#FFA229]' : 'text-[#1C4670]'}`}>
-                {subscription !== 'free' ? 'Unlimited' : (data.internshala?.length || 0) >= 10 ? 'Limit Reached' : `${10 - (data.internshala?.length || 0)} Remaining`}
-              </span>
-           </div>
-           <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: subscription !== 'free' ? '100%' : `${Math.min(((data.internshala?.length || 0) / 10) * 100, 100)}%` }}
-                className={`h-full rounded-full ${subscription !== 'free' ? 'bg-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'bg-rose-500' : (data.internshala?.length || 0) >= 8 ? 'bg-[#FFA229]' : 'bg-[#1C4670]'}`}
-              />
-           </div>
-           <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
-              <span>Current usage</span>
-              <span>Platform Limit: Internshala</span>
-           </div>
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Usage Tracker</span>
+              <span className="text-lg font-bold text-slate-900 dark:text-white">{(data.internshala?.length || 0)} <span className="text-slate-400 font-medium text-sm">/ 10 Applications</span></span>
+            </div>
+            <span className={`text-xs font-black uppercase ${subscription !== 'free' ? 'text-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'text-rose-500' : (data.internshala?.length || 0) >= 8 ? 'text-[#FFA229]' : 'text-[#1C4670]'}`}>
+              {subscription !== 'free' ? 'Unlimited' : (data.internshala?.length || 0) >= 10 ? 'Limit Reached' : `${10 - (data.internshala?.length || 0)} Remaining`}
+            </span>
+          </div>
+          <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: subscription !== 'free' ? '100%' : `${Math.min(((data.internshala?.length || 0) / 10) * 100, 100)}%` }}
+              className={`h-full rounded-full ${subscription !== 'free' ? 'bg-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'bg-rose-500' : (data.internshala?.length || 0) >= 8 ? 'bg-[#FFA229]' : 'bg-[#1C4670]'}`}
+            />
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
+            <span>Current usage</span>
+            <span>Platform Limit: Internshala</span>
+          </div>
         </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Internshala Table */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -246,30 +246,29 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {loading ? (
-                   Array.from({ length: 5 }).map((_, i) => (
+                  Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
                       <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
                       <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
                       <td className="px-6 py-4"><Skeleton className="h-6 w-16" /></td>
                     </tr>
-                   ))
+                  ))
                 ) : data.internshala.slice(-5).reverse().map((item: JobData, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{item['Job Title'] || "N/A"}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.Company || "N/A"}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        item.Status === 'Success' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.Status === 'Success' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'
+                        }`}>
                         {item.Status || "Pending"}
                       </span>
                     </td>
                   </tr>
                 ))}
                 {data.internshala.length === 0 && (
-                   <tr>
-                     <td colSpan={3} className="px-6 py-12 text-center text-slate-500 italic">No applications found.</td>
-                   </tr>
+                  <tr>
+                    <td colSpan={3} className="px-6 py-12 text-center text-slate-500 italic">No applications found.</td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -284,9 +283,8 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
               <div key={idx} className="p-4 space-y-2">
                 <div className="flex justify-between items-start capitalize">
                   <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item['Job Title'] || "N/A"}</h4>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                    item.Status === 'Success' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                  }`}>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${item.Status === 'Success' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                    }`}>
                     {item.Status || "Pending"}
                   </span>
                 </div>
@@ -300,7 +298,7 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
         </motion.div>
 
         {/* Naukri Table */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -328,9 +326,9 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
                   </tr>
                 ))}
                 {data.naukri.length === 0 && (
-                   <tr>
-                     <td colSpan={3} className="px-6 py-12 text-center text-slate-500 italic">No jobs scraped yet.</td>
-                   </tr>
+                  <tr>
+                    <td colSpan={3} className="px-6 py-12 text-center text-slate-500 italic">No jobs scraped yet.</td>
+                  </tr>
                 )}
               </tbody>
             </table>

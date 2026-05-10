@@ -60,12 +60,12 @@ const ChromePreview: React.FC<ChromePreviewProps> = ({ email, isRunning, botId }
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-8 overflow-hidden rounded-[32px] border border-slate-200 dark:border-white/5 bg-white dark:bg-[#0f172a] shadow-xl shadow-[#1C4670]/10 group"
+        className="mt-8 overflow-hidden rounded-[32px] border border-slate-200 dark:border-white/5 bg-white dark:bg-[#0F172A] shadow-xl shadow-brand-primary/10 group"
       >
         <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 rounded-xl bg-[#1C4670]/10 flex items-center justify-center">
-                <Camera className="w-4 h-4 text-[#1C4670]" />
+             <div className="w-8 h-8 rounded-xl bg-brand-primary/10 flex items-center justify-center">
+                <Camera className="w-4 h-4 text-brand-primary" />
              </div>
              <div>
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Chrome Preview</h3>
@@ -83,7 +83,7 @@ const ChromePreview: React.FC<ChromePreviewProps> = ({ email, isRunning, botId }
         <div className="relative aspect-video bg-slate-100 dark:bg-[#0a0d14] p-4 flex items-center justify-center overflow-hidden">
           {loading ? (
              <div className="flex flex-col items-center gap-4 text-center">
-                <RefreshCw className="w-8 h-8 text-[#FFA229] animate-spin" />
+                <RefreshCw className="w-8 h-8 text-brand-secondary animate-spin" />
                 <p className="text-xs font-bold text-slate-500 tracking-tighter uppercase">Initializing Engine...</p>
              </div>
           ) : error || !screenshotUrl ? (

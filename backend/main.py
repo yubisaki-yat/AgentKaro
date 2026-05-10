@@ -28,7 +28,7 @@ import httpx
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-from engines.bot_runner import BotRunner, INTERNSHALA_RUNNER_SCRIPT, NAUKRI_RUNNER_SCRIPT, INDEED_RUNNER_SCRIPT, COMPANY_RUNNER_SCRIPT
+from engines.bot_runner import BotRunner, INTERNSHALA_RUNNER_SCRIPT, NAUKRI_RUNNER_SCRIPT, INDEED_RUNNER_SCRIPT, COMPANY_RUNNER_SCRIPT, BROWSER_RUNNER_SCRIPT
 from backend.resume_processor import ResumeProcessor
 from backend.database import MongoDB
 
@@ -71,6 +71,7 @@ runners = {
     "naukri": BotRunner("Naukri Scraper"),
     "indeed": BotRunner("Indeed Bot"),
     "company_crawler": BotRunner("Company Crawler"),
+    "browser": BotRunner("Interactive Browser"),
 }
 
 # Razorpay Client
@@ -124,6 +125,7 @@ class BotConfig(BaseModel):
     location: str = ""
     max_pages: int = 10
     company_url: Optional[str] = None
+    browser_url: Optional[str] = "https://google.com"
 
 class SettingsUpdate(BaseModel):
     data: dict
@@ -303,6 +305,12 @@ async def start_bot(bot_id: str, config: BotConfig):
             "COMPANY_URL": config.company_url or "",
             "NAUKRI_KEYWORDS": ",".join(config.roles or []) if config.roles else config.keyword,
             "XLSX_PATH": str(excel_path),
+        })
+    elif bot_id == "browser":
+        script_content = BROWSER_RUNNER_SCRIPT
+        env_overrides.update({
+            "BOT_ENGINES_DIR": str(ENGINES_DIR),
+            "BROWSER_START_URL": config.browser_url or "https://google.com",
         })
 
     if not script_content:
@@ -502,14 +510,14 @@ async def register_user(identity: UserIdentity):
             print(f"[AUTH] User {email} already exists")
             raise HTTPException(status_code=400, detail="User already exists. Please login.")
         
-        if not identity.password:
-            raise HTTPException(status_code=400, detail="Password is required")
-            
+        print(f"[AUTH] Registering user: {email}")
         hashed_password = get_password_hash(identity.password)
+        print(f"[AUTH] Hashed password for {email}, calling create_user...")
         user = await MongoDB.create_user(email, hashed_password)
+        print(f"[AUTH] create_user result: {bool(user)}")
         if not user:
-             print(f"[AUTH] Database error creating user {email}")
-             raise HTTPException(status_code=500, detail="Database error during registration")
+             print(f"[AUTH] Database error creating user {email}. MongoDB.create_user returned None.")
+             raise HTTPException(status_code=500, detail="Database error: Failed to create user profile. Please check server logs.")
         
         print(f"[AUTH] User {email} registered successfully")
         # Return user profile for auto-login
@@ -523,8 +531,15 @@ async def register_user(identity: UserIdentity):
             "expiry": user.get("subscription_expiry") if user else None,
             "counts": counts
         }
+    except HTTPException as e:
+        raise e
     except Exception as e:
-        print(f"[AUTH] Registration error for {email}: {e}")
+        error_msg = f"[AUTH] Registration error for {email}: {str(e)}"
+        print(error_msg)
+        import traceback
+        traceback.print_exc()
+        with open("auth_error.log", "a") as f:
+            f.write(error_msg + "\n" + traceback.format_exc() + "\n")
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
  
 @app.post("/api/auth/google")
@@ -615,8 +630,9 @@ async def github_login(req: GithubAuthRequest):
 @app.post("/api/identify")
 async def identify_user(identity: UserIdentity):
     email = identity.email.lower().strip()
-    print(f"[AUTH] Login attempt for: {email}")
+    print(f"[AUTH] identify_user called for: {email}")
     user = await MongoDB.get_user(email)
+    print(f"[AUTH] User lookup result: {'Found' if user else 'Not Found'}")
     
     # Special case for Admin
     if email in ADMIN_EMAILS:
@@ -655,7 +671,7 @@ async def identify_user(identity: UserIdentity):
     
     # Ensure logs storage exists
     if email not in logs_storage:
-        logs_storage[email] = {"internshala": [], "naukri": [], "indeed": [], "company_crawler": []}
+        logs_storage[email] = {"internshala": [], "naukri": [], "indeed": [], "company_crawler": [], "browser": []}
     
     return {
         "email": user["email"],

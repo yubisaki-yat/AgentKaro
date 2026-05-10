@@ -42,8 +42,9 @@ const Browser: React.FC = () => {
   const [tabs, setTabs] = useState([{ id: 1, title: 'Internshala', active: true, url: 'https://internshala.com' }]);
   const [showConsole, setShowConsole] = useState(false);
   const [typedChars, setTypedChars] = useState<string[]>([]);
-  const [activeBotId, setActiveBotId] = useState('internshala');
+  const [activeBotId, setActiveBotId] = useState('browser');
   const [isLive, setIsLive] = useState(true);
+  const [isBotRunning, setIsBotRunning] = useState(false);
   
   const email = localStorage.getItem('user_email');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,14 +61,29 @@ const Browser: React.FC = () => {
     }
   }, [email, isLive, activeBotId]);
 
+  const checkStatus = useCallback(async () => {
+    if (!email) return;
+    try {
+      const res = await axios.get(`${API_BASE}/status?email=${email}`);
+      setIsBotRunning(res.data.status?.browser?.running || false);
+    } catch (err) {
+      console.error("Status check failed", err);
+    }
+  }, [email]);
+
   useEffect(() => {
     if (email) {
+      checkStatus();
       fetchScreenshot();
       // HIGH FREQUENCY POLLING (800ms) for real-time smoothness
       const interval = setInterval(fetchScreenshot, 800); 
-      return () => clearInterval(interval);
+      const statusInterval = setInterval(checkStatus, 3000);
+      return () => {
+        clearInterval(interval);
+        clearInterval(statusInterval);
+      };
     }
-  }, [email, fetchScreenshot]);
+  }, [email, fetchScreenshot, checkStatus]);
 
   const sendAction = async (action: any) => {
     if (!email) return;
@@ -96,7 +112,22 @@ const Browser: React.FC = () => {
     setTimeout(() => setIsLoading(false), 1000);
   };
 
-  // Wheel/Scroll support
+  const startSession = async () => {
+    if (!email) return;
+    setIsLoading(true);
+    try {
+      await axios.post(`${API_BASE}/bot/browser/start`, {
+        email,
+        browser_url: displayUrl
+      });
+      setTimeout(checkStatus, 2000);
+    } catch (err) {
+      console.error("Failed to start browser session", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleWheel = (e: React.WheelEvent) => {
     // Throttled scroll
     if (Math.abs(e.deltaY) > 50) {
@@ -189,7 +220,7 @@ const Browser: React.FC = () => {
         <div className="flex items-center gap-4">
             {/* BOT SELECTOR */}
             <div className="flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/5 mr-4">
-                {['internshala', 'naukri', 'indeed', 'crawler'].map(id => (
+                {['browser', 'internshala', 'naukri', 'indeed'].map(id => (
                     <button 
                         key={id}
                         onClick={() => setActiveBotId(id)}
@@ -256,7 +287,7 @@ const Browser: React.FC = () => {
             sendAction({ type: 'click', x, y });
           }}
         >
-          {screenshotUrl ? (
+          {screenshotUrl && isBotRunning ? (
             <motion.img 
               key={screenshotUrl}
               src={screenshotUrl} 
@@ -265,12 +296,41 @@ const Browser: React.FC = () => {
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-[#020617]">
-                <div className="text-center">
-                    <div className="w-24 h-24 bg-[#1C4670]/5 rounded-[40px] flex items-center justify-center mx-auto mb-8 animate-pulse border border-white/5 shadow-2xl">
-                        <Monitor size={40} className="text-[#1C4670]" />
+                <div className="text-center max-w-lg px-8">
+                    <div className="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center mx-auto mb-8 border border-white/10 shadow-2xl">
+                        <Monitor size={40} className="text-[#FFA229]" />
                     </div>
-                    <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Initializing Secure Tunnel</h3>
-                    <p className="text-slate-500 text-xs font-black uppercase tracking-[0.3em] mt-4 opacity-50">Residential Node Handshake... Pipelines Active.</p>
+                    <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">Secure Browser Node</h3>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-10 opacity-50">
+                        Launch a high-performance residential cloud browser instance directly in your dashboard.
+                    </p>
+                    
+                    <button 
+                        onClick={startSession}
+                        disabled={isLoading}
+                        className={`w-full py-6 bg-gradient-to-r from-[#FF6B6B] via-[#FF8C42] to-[#00A8FF] text-white rounded-[32px] text-xs font-black uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100`}
+                    >
+                        {isLoading ? (
+                            <RefreshCw size={20} className="animate-spin" />
+                        ) : (
+                            <>
+                                <Zap size={20} />
+                                Start Secure Session
+                            </>
+                        )}
+                    </button>
+                    
+                    <div className="flex items-center justify-center gap-6 mt-10">
+                        <div className="flex items-center gap-2">
+                            <Shield size={12} className="text-emerald-500" />
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">AES-256 Tunnel</span>
+                        </div>
+                        <div className="w-1 h-1 bg-slate-800 rounded-full" />
+                        <div className="flex items-center gap-2">
+                            <Globe size={12} className="text-blue-500" />
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Residential IP</span>
+                        </div>
+                    </div>
                 </div>
             </div>
           )}

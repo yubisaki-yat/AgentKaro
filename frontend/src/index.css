@@ -1,30 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito:wght@700;800&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-brand-primary: #1C4670;
-  --color-brand-secondary: #FFA229;
-  --color-brand-accent: #E89218;
-  --color-bg-dark: #0a0d14;
-  --color-card-dark: #0f172a;
+  --color-brand-primary: #2D3748;
+  --color-brand-agents: #2D3748;
+  --color-brand-secondary: #FF8C42;
+  --color-brand-accent: #00A8FF;
+  --color-bg-dark: #0F172A;
+  --color-card-dark: #1E293B;
+  --color-text-soft: #94A3B8;
   --color-peach: #FFF2E5;
 }
 
 @layer base {
   body {
-    @apply bg-slate-50 dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200;
-    font-family: 'Inter', sans-serif;
+    @apply bg-white dark:bg-[#0F172A] text-[#2D3748] dark:text-[#94A3B8];
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 }
 
 @layer components {
+  .logo-karo-gradient {
+    background: linear-gradient(
+      90deg,
+      #FF6B6B 0%,
+      #FF8C42 30%,
+      #00A8FF 65%,
+      #00E5FF 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .logo-glow {
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+  }
+
+  .logo-drop-shadow {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.45));
+  }
+
   .glass-card {
     @apply bg-white dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-none;
   }
   
   .premium-gradient {
-    @apply bg-gradient-to-br from-[#1C4670] via-[#2A6BA3] to-[#FFA229];
+    @apply bg-gradient-to-br from-[#2D3748] via-[#4A5568] to-[#FF8C42];
   }
 
   .log-terminal {

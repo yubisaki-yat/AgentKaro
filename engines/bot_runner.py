@@ -261,3 +261,24 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 """
+
+# ---- BROWSER WRAPPER SCRIPT ----
+BROWSER_RUNNER_SCRIPT = PREAMBLE + """
+print("[DEBUG] Interactive Browser Runner script started.", flush=True)
+start_url = os.environ.get("BROWSER_START_URL", "https://google.com")
+headless = os.environ.get("BOT_HEADLESS", "false").lower() == "true"
+
+print(f"[DEBUG] Start URL: {start_url}, Headless: {headless}", flush=True)
+
+from browser_bot import BrowserBot
+print("[DEBUG] BrowserBot class imported.", flush=True)
+try:
+    bot = BrowserBot(start_url=start_url)
+    print("[DEBUG] Browser instance created successfully.", flush=True)
+    bot.run()
+except Exception as e:
+    print(f"[CRITICAL ERROR] Failed to initialize/start browser: {e}", flush=True)
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+"""

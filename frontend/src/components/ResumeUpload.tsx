@@ -75,13 +75,13 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card p-8 border-slate-200 dark:border-slate-800 bg-[#FFF2E5]/30 dark:bg-[#1C4670]/5 overflow-hidden"
+      className="glass-card p-8 border-slate-200 dark:border-slate-800 bg-brand-secondary/5 dark:bg-brand-primary/5 overflow-hidden"
     >
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-[#FFF2E5] dark:bg-[#1C4670]/20 rounded-lg">
-          <Sparkles className="w-5 h-5 text-[#FFA229] dark:text-[#FFA229]" />
+        <div className="p-2 bg-brand-secondary/10 dark:bg-brand-primary/20 rounded-lg">
+          <Sparkles className="w-5 h-5 text-brand-secondary" />
         </div>
-        <h2 className="text-xl font-black text-[#1C4670] dark:text-white tracking-tight uppercase">AI Resume Search</h2>
+        <h2 className="text-xl font-bold text-brand-primary dark:text-white tracking-tight uppercase">AI Resume Search</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -91,7 +91,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
             <div className={`
               border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer
               transition-all duration-300 group
-              ${file ? 'border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5' : 'border-slate-300 dark:border-slate-700 hover:border-[#FFA229] dark:hover:border-[#FFA229]/50 hover:bg-[#FFF2E5] dark:hover:bg-[#1C4670]/10'}
+              ${file ? 'border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5' : 'border-slate-300 dark:border-slate-700 hover:border-brand-secondary dark:hover:border-brand-secondary/50 hover:bg-brand-secondary/10 dark:hover:bg-brand-primary/10'}
             `}>
               <input type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.docx" />
               {file ? (
@@ -107,7 +107,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
                 </>
               ) : (
                 <>
-                  <Upload className="w-12 h-12 text-slate-400 dark:text-slate-500 group-hover:text-[#FFA229] dark:group-hover:text-[#FFA229] group-hover:scale-110 transition-all mb-2" />
+                  <Upload className="w-12 h-12 text-slate-400 dark:text-slate-500 group-hover:text-brand-secondary dark:group-hover:text-brand-secondary group-hover:scale-110 transition-all mb-2" />
                   <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to upload resume</p>
                   <p className="text-xs text-slate-500 mt-1">PDF or DOCX supported</p>
                 </>
@@ -122,7 +122,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
               w-full py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all
               ${!file || uploading 
                 ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed' 
-                : 'bg-[#FFA229] text-white shadow-lg shadow-[#FFA229]/20 hover:scale-[1.02] active:scale-[0.98]'}
+                : 'bg-brand-secondary text-white shadow-lg shadow-brand-secondary/20 hover:scale-[1.02] active:scale-[0.98]'}
             `}
           >
             {uploading ? (
@@ -151,7 +151,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: i * 0.05 }}
-                        className="px-3 py-1 bg-[#FFF2E5] dark:bg-[#1C4670]/30 text-[#1C4670] dark:text-[#FFA229] border border-[#FFA229]/20 rounded-full text-[10px] font-black uppercase tracking-wider"
+                        className="px-3 py-1 bg-brand-secondary/10 dark:bg-brand-primary/30 text-brand-primary dark:text-brand-secondary border border-brand-secondary/20 rounded-full text-[10px] font-bold uppercase tracking-wider"
                       >
                         {kw}
                       </motion.span>
@@ -176,14 +176,14 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
             <div className="mt-6 grid grid-cols-2 gap-4">
               <button
                 onClick={() => startSearch('naukri')}
-                className="py-3 bg-[#FFF2E5] dark:bg-[#1C4670]/20 text-[#1C4670] dark:text-[#FFA229] border border-[#FFA229]/20 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#FFA229]/10 transition-all text-[10px]"
+                className="py-3 bg-brand-secondary/10 dark:bg-brand-primary/20 text-brand-primary dark:text-brand-secondary border border-brand-secondary/20 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-secondary/10 transition-all text-[10px]"
               >
                 <Search className="w-4 h-4" />
                 Naukri
               </button>
               <button
                 onClick={() => startSearch('internshala')}
-                className="py-3 bg-[#1C4670] text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#2A6BA3] transition-all text-[10px] shadow-lg shadow-[#1C4670]/20"
+                className="py-3 bg-brand-primary text-white rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-primary/90 transition-all text-[10px] shadow-lg shadow-brand-primary/20"
               >
                 <Sparkles className="w-4 h-4" />
                 Internshala

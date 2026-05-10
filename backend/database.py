@@ -18,8 +18,11 @@ def get_db_connection():
         return None
     
     try:
-        conn = psycopg2.connect(url, cursor_factory=RealDictCursor)
+        conn = psycopg2.connect(url, cursor_factory=RealDictCursor, connect_timeout=10)
         conn.autocommit = True
+        # Set a query timeout of 10 seconds
+        with conn.cursor() as cur:
+            cur.execute("SET statement_timeout = 10000")
         return conn
     except Exception as e:
         print(f"[CRITICAL ERROR] Failed to connect to PostgreSQL: {e}")
@@ -80,7 +83,12 @@ class MongoDB:
                 
                 return user_row
         except Exception as e:
-            print(f"[DB ERROR] create_user failed for {email}: {e}")
+            import traceback
+            error_msg = f"[DB ERROR] create_user failed for {email}: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg)
+            # Write to a file for the agent to see
+            with open("db_error.log", "a") as f:
+                f.write(error_msg + "\n")
             return None
         finally:
             conn.close()
