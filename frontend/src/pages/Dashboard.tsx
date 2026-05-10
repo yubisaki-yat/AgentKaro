@@ -3,6 +3,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Briefcase, CheckCircle, Search, Building, RefreshCw, User, Star, Shield } from 'lucide-react';
 import Skeleton from '../components/Skeleton';
+import ChromePreview from '../components/ChromePreview';
 
 import API_BASE from '../config';
 
@@ -173,182 +174,193 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {stats.map((s) => <KpiCard key={s.title} {...s} loading={loading} />)}
-      </div>
-
-      {/* Subscription Status Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-        className="glass-card p-8 bg-gradient-to-br from-[#1C4670]/5 to-[#FFA229]/5 border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFA229]/10 blur-[80px] rounded-full translate-x-1/4 -translate-y-1/2 pointer-events-none" />
-
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#1C4670] rounded-lg shadow-lg shadow-[#1C4670]/20">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <h3 className="text-xl font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Subscription Insights</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Content: Left Column (8 units) */}
+        <div className="lg:col-span-8 space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, i) => (
+              <KpiCard key={i} {...stat} loading={loading} />
+            ))}
           </div>
-          <p className="text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed text-sm">
-            You are currently on the <span className="font-black text-[#FFA229] uppercase tracking-wider">{subscription} Plan</span>.
-            {subscription === 'free' ? " Upgrade to premium to remove all application limits, unlock AI Resume Search, and access priority support." : " Enjoy your unlimited access, early feature access, and premium priority support!"}
-          </p>
-        </div>
 
-        <div className="w-full md:w-80 space-y-4">
-          <div className="flex justify-between items-end">
-            <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Usage Tracker</span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white">{(data.internshala?.length || 0)} <span className="text-slate-400 font-medium text-sm">/ 10 Applications</span></span>
+          {/* Mobile-only Preview */}
+          {Object.entries(status).some(([_, s]) => s.running) && (
+            <div className="lg:hidden">
+              {(() => {
+                const activeBotEntry = Object.entries(status).find(([_, s]) => s.running);
+                return activeBotEntry ? (
+                  <ChromePreview 
+                    email={email} 
+                    isRunning={true} 
+                    botId={activeBotEntry[0]} 
+                  />
+                ) : null;
+              })()}
             </div>
-            <span className={`text-xs font-black uppercase ${subscription !== 'free' ? 'text-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'text-rose-500' : (data.internshala?.length || 0) >= 8 ? 'text-[#FFA229]' : 'text-[#1C4670]'}`}>
-              {subscription !== 'free' ? 'Unlimited' : (data.internshala?.length || 0) >= 10 ? 'Limit Reached' : `${10 - (data.internshala?.length || 0)} Remaining`}
-            </span>
-          </div>
-          <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+          )}
+
+          {/* Subscription Status Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="glass-card p-8 bg-gradient-to-br from-[#1C4670]/5 to-[#FFA229]/5 border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-8 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFA229]/10 blur-[80px] rounded-full translate-x-1/4 -translate-y-1/2 pointer-events-none" />
+
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#1C4670] rounded-lg shadow-lg shadow-[#1C4670]/20">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Subscription Insights</h3>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed text-sm">
+                You are currently on the <span className="font-black text-[#FFA229] uppercase tracking-wider">{subscription} Plan</span>.
+                {subscription === 'free' ? " Upgrade to premium to remove all application limits, unlock AI Resume Search, and access priority support." : " Enjoy your unlimited access, early feature access, and premium priority support!"}
+              </p>
+            </div>
+
+            <div className="w-full md:w-80 space-y-4">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Usage Tracker</span>
+                  <span className="text-lg font-bold text-slate-900 dark:text-white">{(data.internshala?.length || 0)} <span className="text-slate-400 font-medium text-sm">/ 10 Applications</span></span>
+                </div>
+                <span className={`text-xs font-black uppercase ${subscription !== 'free' ? 'text-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'text-rose-500' : (data.internshala?.length || 0) >= 8 ? 'text-[#FFA229]' : 'text-[#1C4670]'}`}>
+                  {subscription !== 'free' ? 'Unlimited' : (data.internshala?.length || 0) >= 10 ? 'Limit Reached' : `${10 - (data.internshala?.length || 0)} Remaining`}
+                </span>
+              </div>
+              <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: subscription !== 'free' ? '100%' : `${Math.min(((data.internshala?.length || 0) / 10) * 100, 100)}%` }}
+                  className={`h-full rounded-full ${subscription !== 'free' ? 'bg-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'bg-rose-500' : (data.internshala?.length || 0) >= 8 ? 'bg-[#FFA229]' : 'bg-[#1C4670]'}`}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
+                <span>Current usage</span>
+                <span>Platform Limit: Internshala</span>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Internshala Table */}
             <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: subscription !== 'free' ? '100%' : `${Math.min(((data.internshala?.length || 0) / 10) * 100, 100)}%` }}
-              className={`h-full rounded-full ${subscription !== 'free' ? 'bg-emerald-500' : (data.internshala?.length || 0) >= 10 ? 'bg-rose-500' : (data.internshala?.length || 0) >= 8 ? 'bg-[#FFA229]' : 'bg-[#1C4670]'}`}
-            />
-          </div>
-          <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
-            <span>Current usage</span>
-            <span>Platform Limit: Internshala</span>
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="glass-card overflow-hidden border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none"
+            >
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+                <h2 className="text-lg font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Recent Applications</h2>
+                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-[#1C4670]/10 text-[#1C4670] rounded-lg border border-[#1C4670]/10">Internshala</span>
+              </div>
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-transparent">
+                    <tr>
+                      <th className="px-6 py-4">Job Title</th>
+                      <th className="px-6 py-4">Company</th>
+                      <th className="px-6 py-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                    {loading ? (
+                      [1, 2, 3].map(i => (
+                        <tr key={i}>
+                          <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
+                          <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                          <td className="px-6 py-4"><Skeleton className="h-6 w-16" /></td>
+                        </tr>
+                      ))
+                    ) : data.internshala.slice(-5).reverse().map((item: JobData, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{item['Job Title'] || "N/A"}</td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.Company || "N/A"}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.Status === 'Success' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'}`}>
+                            {item.Status || "Pending"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+
+            {/* Naukri Table */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="glass-card overflow-hidden border-[#1C4670]/10 shadow-lg shadow-[#1C4670]/5"
+            >
+              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
+                <h2 className="text-lg font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Naukri Scrapes</h2>
+                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-[#1C4670]/10 text-[#1C4670] rounded-lg border border-[#1C4670]/10">Recent</span>
+              </div>
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-transparent">
+                    <tr>
+                      <th className="px-6 py-4">Title</th>
+                      <th className="px-6 py-4">Company</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                    {data.naukri.slice(-5).reverse().map((item: JobData, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200 truncate max-w-[150px]">{item['Job Title'] || "N/A"}</td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400 truncate max-w-[150px]">{item.Company || "N/A"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Internshala Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass-card overflow-hidden border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none"
-        >
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
-            <h2 className="text-lg font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Recent Internshala</h2>
-            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-[#FFF2E5] dark:bg-[#FFA229]/10 text-[#FFA229] rounded-lg">Last 5</span>
-          </div>
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-transparent">
-                <tr>
-                  <th className="px-6 py-4">Job Title</th>
-                  <th className="px-6 py-4">Company</th>
-                  <th className="px-6 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
-                      <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
-                      <td className="px-6 py-4"><Skeleton className="h-6 w-16" /></td>
-                    </tr>
-                  ))
-                ) : data.internshala.slice(-5).reverse().map((item: JobData, idx: number) => (
-                  <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{item['Job Title'] || "N/A"}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.Company || "N/A"}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.Status === 'Success' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'
-                        }`}>
-                        {item.Status || "Pending"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {data.internshala.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-slate-500 italic">No applications found.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800/50 min-h-[200px]">
-            {loading ? (
-              <div className="p-4 space-y-4">
-                <Skeleton className="h-16 w-full" count={3} />
-              </div>
-            ) : data.internshala.slice(-5).reverse().map((item: JobData, idx: number) => (
-              <div key={idx} className="p-4 space-y-2">
-                <div className="flex justify-between items-start capitalize">
-                  <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item['Job Title'] || "N/A"}</h4>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${item.Status === 'Success' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/10' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                    }`}>
-                    {item.Status || "Pending"}
-                  </span>
+        {/* Right Sidebar: 4 units */}
+        <div className="lg:col-span-4 space-y-8">
+          {/* Desktop Preview */}
+          {Object.entries(status).some(([_, s]) => s.running) && (
+            <div className="hidden lg:block">
+              {(() => {
+                const activeBotEntry = Object.entries(status).find(([_, s]) => s.running);
+                return activeBotEntry ? (
+                  <ChromePreview 
+                    email={email} 
+                    isRunning={true} 
+                    botId={activeBotEntry[0]} 
+                  />
+                ) : null;
+              })()}
+            </div>
+          )}
+          
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="glass-card p-6 border-slate-200 dark:border-slate-800"
+          >
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Agent Activity</h3>
+            <div className="space-y-6">
+              {Object.entries(status).map(([botId, s]) => (
+                <div key={botId} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${s.running ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">{botId}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-500">{s.elapsed}</span>
                 </div>
-                <p className="text-xs text-slate-500 font-medium">@{item.Company || "N/A"}</p>
-              </div>
-            ))}
-            {data.internshala.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs italic">No applications yet.</div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Naukri Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="glass-card overflow-hidden border-[#1C4670]/10 shadow-lg shadow-[#1C4670]/5"
-        >
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
-            <h2 className="text-lg font-black text-[#1C4670] dark:text-white uppercase tracking-tight">Recent Naukri Scrapes</h2>
-            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-[#1C4670]/10 text-[#1C4670] dark:text-[#FFA229] rounded-lg border border-[#1C4670]/10">Last 5</span>
-          </div>
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-slate-500 uppercase text-[10px] tracking-widest border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-transparent">
-                <tr>
-                  <th className="px-6 py-4">Job Title</th>
-                  <th className="px-6 py-4">Company</th>
-                  <th className="px-6 py-4">Location</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                {data.naukri.slice(-5).reverse().map((item: JobData, idx: number) => (
-                  <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">{item['Job Title'] || "N/A"}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.Company || "N/A"}</td>
-                    <td className="px-6 py-4 text-slate-500">{item.Location || "Remote"}</td>
-                  </tr>
-                ))}
-                {data.naukri.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-slate-500 italic">No jobs scraped yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800/50">
-            {data.naukri.slice(-5).reverse().map((item: JobData, idx: number) => (
-              <div key={idx} className="p-4 space-y-1">
-                <h4 className="font-bold text-slate-900 dark:text-white capitalize line-clamp-1">{item['Job Title'] || "N/A"}</h4>
-                <div className="flex justify-between items-center text-xs text-slate-500">
-                  <span>@{item.Company || "N/A"}</span>
-                  <span className="font-medium text-blue-500">{item.Location || "Remote"}</span>
-                </div>
-              </div>
-            ))}
-            {data.naukri.length === 0 && (
-              <div className="p-8 text-center text-slate-400 text-xs italic">No data found.</div>
-            )}
-          </div>
-        </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
