@@ -72,7 +72,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/status?email=${email}`);
+        const res = await axios.get(`${API_BASE}/status?email=${email}`, { timeout: 30000 });
         setStatus(res.data.status);
         if (res.data.subscription) {
           setSubscription(res.data.subscription);
@@ -98,7 +98,7 @@ const App: React.FC = () => {
       const res = await axios.post(`${API_BASE}${endpoint}`, {
         email: tempEmail,
         password: password || null
-      }, { timeout: 15000 });
+      }, { timeout: 30000 });
 
       if (isRegistering) {
         setIsRegistering(false);
@@ -153,7 +153,7 @@ const App: React.FC = () => {
     try {
       const res = await axios.post(`${API_BASE}/auth/google`, {
         token: response.credential
-      }, { timeout: 15000 });
+      }, { timeout: 30000 });
 
       localStorage.setItem('user_email', res.data.email);
       localStorage.setItem('user_sub', res.data.subscription);
@@ -197,7 +197,7 @@ const App: React.FC = () => {
         setIdentifying(true);
         setShowIdentityModal(true);
         try {
-          const res = await axios.post(`${API_BASE}/auth/github`, { code }, { timeout: 15000 });
+          const res = await axios.post(`${API_BASE}/auth/github`, { code }, { timeout: 30000 });
           localStorage.setItem('user_email', res.data.email);
           localStorage.setItem('user_sub', res.data.subscription);
           setSyncSuccess(true);
