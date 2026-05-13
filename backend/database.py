@@ -9,24 +9,45 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Database Connection Helper
+from psycopg2.pool import ThreadedConnectionPool
+
+# Global Connection Pool
+_pool = None
+
+def get_pool():
+    global _pool
+    if _pool is None:
+        url = os.getenv("DATABASE_URL")
+        if not url:
+            print("[WARNING] DATABASE_URL missing! Please set it in .env")
+            return None
+        try:
+            print("[DB] Initializing ThreadedConnectionPool...")
+            _pool = ThreadedConnectionPool(1, 10, url, cursor_factory=RealDictCursor, connect_timeout=10)
+        except Exception as e:
+            print(f"[CRITICAL ERROR] Failed to initialize connection pool: {e}")
+            return None
+    return _pool
+
 def get_db_connection():
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        # Fallback for local development or if not set yet
-        print("[WARNING] DATABASE_URL missing! Please set it in .env")
+    pool = get_pool()
+    if not pool:
         return None
-    
     try:
-        conn = psycopg2.connect(url, cursor_factory=RealDictCursor, connect_timeout=10)
+        conn = pool.getconn()
         conn.autocommit = True
         # Set a query timeout of 10 seconds
         with conn.cursor() as cur:
             cur.execute("SET statement_timeout = 10000")
         return conn
     except Exception as e:
-        print(f"[CRITICAL ERROR] Failed to connect to PostgreSQL: {e}")
+        print(f"[CRITICAL ERROR] Failed to get connection from pool: {e}")
         return None
+
+def release_db_connection(conn):
+    pool = get_pool()
+    if pool and conn:
+        pool.putconn(conn)
 
 class MongoDB:
     """
@@ -34,7 +55,7 @@ class MongoDB:
     """
 
     @staticmethod
-    async def get_user(email: str):
+    def get_user(email: str):
         conn = get_db_connection()
         if not conn: return None
         try:
@@ -46,10 +67,10 @@ class MongoDB:
             print(f"[DB ERROR] get_user failed: {e}")
             return None
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def create_user(email: str, hashed_password: str = None, source: str = "local"):
+    def create_user(email: str, hashed_password: str = None, source: str = "local"):
         conn = get_db_connection()
         if not conn: return None
         try:
@@ -91,10 +112,10 @@ class MongoDB:
                 f.write(error_msg + "\n")
             return None
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def update_subscription(email: str, level: str, expiry: datetime = None):
+    def update_subscription(email: str, level: str, expiry: datetime = None):
         conn = get_db_connection()
         if not conn: return
         try:
@@ -107,10 +128,10 @@ class MongoDB:
         except Exception as e:
             print(f"[DB ERROR] update_subscription failed: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def get_usage(email: str):
+    def get_usage(email: str):
         conn = get_db_connection()
         if not conn: return None
         try:
@@ -122,10 +143,10 @@ class MongoDB:
             print(f"[DB ERROR] get_usage failed: {e}")
             return None
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def increment_usage(email: str, platform: str):
+    def increment_usage(email: str, platform: str):
         conn = get_db_connection()
         if not conn: return
         try:
@@ -149,10 +170,10 @@ class MongoDB:
         except Exception as e:
             print(f"[DB ERROR] increment_usage failed: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def get_settings(email: str):
+    def get_settings(email: str):
         conn = get_db_connection()
         if not conn: return {}
         try:
@@ -165,10 +186,10 @@ class MongoDB:
             print(f"[DB ERROR] get_settings failed: {e}")
             return {}
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def save_settings(email: str, data: dict):
+    def save_settings(email: str, data: dict):
         conn = get_db_connection()
         if not conn: return
         try:
@@ -181,11 +202,13 @@ class MongoDB:
                 )
         except Exception as e:
             print(f"[DB ERROR] save_settings failed: {e}")
+            raise e
         finally:
-            conn.close()
+            if conn:
+                release_db_connection(conn)
 
     @staticmethod
-    async def add_application(email: str, app_data: dict):
+    def add_application(email: str, app_data: dict):
         conn = get_db_connection()
         if not conn: return
         try:
@@ -203,10 +226,10 @@ class MongoDB:
         except Exception as e:
             print(f"[DB ERROR] add_application failed: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
 
     @staticmethod
-    async def get_applications(email: str, platform: str = None):
+    def get_applications(email: str, platform: str = None):
         conn = get_db_connection()
         if not conn: return []
         try:
@@ -227,4 +250,4 @@ class MongoDB:
             print(f"[DB ERROR] get_applications failed: {e}")
             return []
         finally:
-            conn.close()
+            release_db_connection(conn)

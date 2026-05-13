@@ -1,57 +1,109 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Outfit:wght@400;600;800;900&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-brand-primary: #2D3748;
-  --color-brand-agents: #2D3748;
-  --color-brand-secondary: #FF8C42;
+  --color-brand-primary: #1C4670;
+  --color-brand-secondary: #FFA229;
   --color-brand-accent: #00A8FF;
-  --color-bg-dark: #0F172A;
-  --color-card-dark: #1E293B;
+  --color-brand-danger: #FF6B6B;
+  --color-bg-dark: #0a0d14;
+  --color-card-dark: #121826;
   --color-text-soft: #94A3B8;
-  --color-peach: #FFF2E5;
 }
 
 @layer base {
   body {
-    @apply bg-white dark:bg-[#0F172A] text-[#2D3748] dark:text-[#94A3B8];
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply bg-white dark:bg-[#0a0d14] text-slate-800 dark:text-slate-200;
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer components {
   .logo-karo-gradient {
-    background: linear-gradient(
-      90deg,
-      #FF6B6B 0%,
-      #FF8C42 30%,
-      #00A8FF 65%,
-      #00E5FF 100%
-    );
+    background: linear-gradient(90deg,
+        #FF6B6B 0%,
+        #FFA229 30%,
+        #00A8FF 65%,
+        #00E5FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .logo-glow {
-    box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+    box-shadow: 0 0 30px rgba(255, 162, 41, 0.2);
   }
 
   .logo-drop-shadow {
-    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.45));
+    filter: drop-shadow(0 0 15px rgba(255, 162, 41, 0.3));
   }
 
   .glass-card {
-    @apply bg-white dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-none;
-  }
-  
-  .premium-gradient {
-    @apply bg-gradient-to-br from-[#2D3748] via-[#4A5568] to-[#FF8C42];
+    @apply bg-white dark:bg-[#121826]/40 backdrop-blur-2xl border border-slate-200/50 dark:border-white/5 rounded-[2.5rem] dark:shadow-none transition-all duration-500;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.04);
   }
 
-  .log-terminal {
-    @apply bg-[#050810] border border-slate-800 rounded-xl p-4 font-mono text-sm text-[#a8d672] overflow-y-auto;
+  .glass-card:where(.dark, .dark *) {
+    box-shadow: none;
+  }
+
+  .glass-card-hover {
+    @apply hover:border-brand-secondary/30 hover:-translate-y-2;
+  }
+
+  .glass-card-hover:hover {
+    box-shadow: 0 20px 60px -12px rgba(255, 162, 41, 0.1);
+  }
+
+  .premium-gradient {
+    background: linear-gradient(135deg, #1C4670 0%, #2D3748 100%);
+  }
+
+  .animate-float {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-20px) rotate(2deg);
+    }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(255, 162, 41, 0.1);
+    }
+
+    50% {
+      box-shadow: 0 0 50px rgba(255, 162, 41, 0.3);
+    }
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .text-fill-transparent {
+    -webkit-text-fill-color: transparent;
   }
 }

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, X, Search, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, FileText, X, Search, Sparkles, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import API_BASE from '../config';
-
 
 interface ResumeUploadProps {
   onSearchInitiated?: (keywords: string[]) => void;
@@ -75,41 +74,56 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card p-8 border-slate-200 dark:border-slate-800 bg-brand-secondary/5 dark:bg-brand-primary/5 overflow-hidden"
+      className="glass-card p-10 border border-slate-200/50 dark:border-white/5 relative overflow-hidden group shadow-2xl"
     >
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-brand-secondary/10 dark:bg-brand-primary/20 rounded-lg">
-          <Sparkles className="w-5 h-5 text-brand-secondary" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1C4670] via-transparent to-[#FFA229] opacity-[0.03]" />
+      
+      <div className="relative z-10 flex items-center gap-4 mb-10">
+        <div className="p-3 bg-[#FFA229]/10 rounded-2xl shadow-lg shadow-[#FFA229]/10">
+          <Sparkles className="w-5 h-5 text-[#FFA229]" />
         </div>
-        <h2 className="text-xl font-bold text-brand-primary dark:text-white tracking-tight uppercase">AI Resume Search</h2>
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase mb-0.5">Resume Intelligence</h2>
+          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Autonomous Skill Extraction Engine</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Upload Section */}
-        <div className="space-y-4">
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* Upload Column */}
+        <div className="space-y-6">
           <label className="block">
             <div className={`
-              border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer
-              transition-all duration-300 group
-              ${file ? 'border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5' : 'border-slate-300 dark:border-slate-700 hover:border-brand-secondary dark:hover:border-brand-secondary/50 hover:bg-brand-secondary/10 dark:hover:bg-brand-primary/10'}
+              border-2 border-dashed rounded-[2.5rem] p-10 flex flex-col items-center justify-center cursor-pointer
+              transition-all duration-500 group relative overflow-hidden
+              ${file 
+                ? 'border-emerald-500/30 bg-emerald-500/[0.03]' 
+                : 'border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 hover:border-[#FFA229]/40 hover:bg-[#FFA229]/5'}
             `}>
               <input type="file" className="hidden" onChange={handleFileChange} accept=".pdf,.docx" />
               {file ? (
-                <>
-                  <FileText className="w-12 h-12 text-emerald-500 dark:text-emerald-400 mb-2" />
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{file.name}</p>
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-center"
+                >
+                  <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+                    <FileText className="w-8 h-8 text-emerald-500" />
+                  </div>
+                  <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight mb-2 truncate max-w-[200px] mx-auto">{file.name}</p>
                   <button 
                     onClick={(e) => { e.preventDefault(); setFile(null); }}
-                    className="mt-2 text-xs text-slate-500 hover:text-red-500 dark:hover:text-red-400 flex items-center gap-1"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-white transition-all"
                   >
-                    <X className="w-3 h-3" /> Remove
+                    <X className="w-3 h-3" /> Remove Node
                   </button>
-                </>
+                </motion.div>
               ) : (
                 <>
-                  <Upload className="w-12 h-12 text-slate-400 dark:text-slate-500 group-hover:text-brand-secondary dark:group-hover:text-brand-secondary group-hover:scale-110 transition-all mb-2" />
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to upload resume</p>
-                  <p className="text-xs text-slate-500 mt-1">PDF or DOCX supported</p>
+                  <div className="w-16 h-16 bg-white dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-slate-200/50 dark:border-white/10 group-hover:scale-110 transition-transform shadow-sm">
+                    <Upload className="w-7 h-7 text-slate-400 group-hover:text-[#FFA229] transition-colors" />
+                  </div>
+                  <p className="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">Initialize Node Upload</p>
+                  <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-tighter italic opacity-60">PDF / DOCX - Enterprise Standard</p>
                 </>
               )}
             </div>
@@ -119,71 +133,78 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onSearchInitiated }) => {
             onClick={uploadResume}
             disabled={!file || uploading}
             className={`
-              w-full py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all
+              w-full py-5 rounded-[2rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 transition-all
               ${!file || uploading 
-                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed' 
-                : 'bg-brand-secondary text-white shadow-lg shadow-brand-secondary/20 hover:scale-[1.02] active:scale-[0.98]'}
+                ? 'bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-white/5' 
+                : 'bg-[#1C4670] text-white shadow-xl shadow-[#1C4670]/20 hover:scale-[1.02] active:scale-95'}
             `}
           >
             {uploading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              <>Analyze with AI</>
+              <>
+                <span>Commit to Neural Analysis</span>
+                <Sparkles className="w-4 h-4" />
+              </>
             )}
           </button>
         </div>
 
-        {/* Results Section */}
-        <div className="glass-card bg-slate-50 dark:bg-slate-900/50 p-6 flex flex-col border border-slate-200 dark:border-slate-800">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            Extracted Keywords
-            {status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />}
-            {status === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400" />}
-          </h3>
+        {/* Intelligence Column */}
+        <div className="glass-card bg-slate-50 dark:bg-white/[0.02] p-8 flex flex-col border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-inner">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+              Neural Extractions
+              {status === 'success' && <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />}
+            </h3>
+            {status === 'error' && <AlertCircle className="w-4 h-4 text-rose-500" />}
+          </div>
 
-          <div className="flex-1 min-h-[120px]">
+          <div className="flex-1 min-h-[160px]">
             <AnimatePresence mode='popLayout'>
               {extractedKeywords.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {extractedKeywords.map((kw, i) => (
                       <motion.span
                         key={kw}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="px-3 py-1 bg-brand-secondary/10 dark:bg-brand-primary/30 text-brand-primary dark:text-brand-secondary border border-brand-secondary/20 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                        className="px-4 py-2 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-sm hover:border-[#FFA229]/40 hover:text-[#FFA229] transition-all cursor-default"
                       >
                         {kw}
                       </motion.span>
                   ))}
                 </div>
               ) : status === 'error' ? (
-                <div className="h-full flex flex-col items-center justify-center text-rose-500 text-center">
-                  <AlertCircle className="w-8 h-8 mb-2 opacity-80" />
-                  <p className="text-xs font-bold uppercase tracking-tight">AI Extraction Failed</p>
-                  <p className="text-[10px] mt-1 opacity-70">Check internet connection or<br/>try a different file format.</p>
+                <div className="h-full flex flex-col items-center justify-center text-rose-500/80 text-center space-y-4">
+                  <AlertCircle className="w-12 h-12 opacity-20" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest">Protocol Failure</p>
+                    <p className="text-[9px] mt-1 font-bold uppercase tracking-tighter opacity-60">Neural bridge synchronization failed.</p>
+                  </div>
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-600 dark:text-slate-400 text-center">
-                  <Search className="w-8 h-8 mb-2 opacity-20" />
-                  <p className="text-xs">Upload your resume to see<br/>extracted skills and keywords.</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-400/50 text-center space-y-4">
+                  <Search className="w-12 h-12 opacity-10" />
+                  <p className="text-[10px] font-black uppercase tracking-widest max-w-[140px]">Awaiting analysis initialization</p>
                 </div>
               )}
             </AnimatePresence>
           </div>
 
           {extractedKeywords.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-10 grid grid-cols-2 gap-4">
               <button
                 onClick={() => startSearch('naukri')}
-                className="py-3 bg-brand-secondary/10 dark:bg-brand-primary/20 text-brand-primary dark:text-brand-secondary border border-brand-secondary/20 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-secondary/10 transition-all text-[10px]"
+                className="py-4 bg-[#1C4670] text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:shadow-xl shadow-[#1C4670]/20 transition-all text-[9px]"
               >
                 <Search className="w-4 h-4" />
                 Naukri
               </button>
               <button
                 onClick={() => startSearch('internshala')}
-                className="py-3 bg-brand-primary text-white rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-primary/90 transition-all text-[10px] shadow-lg shadow-brand-primary/20"
+                className="py-4 bg-[#FFA229] text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:shadow-xl shadow-[#FFA229]/20 transition-all text-[9px]"
               >
                 <Sparkles className="w-4 h-4" />
                 Internshala

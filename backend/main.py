@@ -173,10 +173,10 @@ class BrowserActionRequest(BaseModel):
 # HELPERS (REFACTORED FOR MONGODB)
 # ----------------------------------------------------------------
 async def load_user_settings(email: str) -> dict:
-    return await MongoDB.get_settings(email)
+    return await asyncio.to_thread(MongoDB.get_settings, email)
 
 async def save_user_settings(email: str, data: dict):
-    await MongoDB.save_settings(email, data)
+    await asyncio.to_thread(MongoDB.save_settings, email, data)
 
 # ----------------------------------------------------------------
 # ROUTES: BOT CONTROL
@@ -192,8 +192,8 @@ async def get_status(email: Optional[str] = None):
         }
     
     if email:
-        user = await MongoDB.get_user(email)
-        usage_doc = await MongoDB.get_usage(email)
+        user = await asyncio.to_thread(MongoDB.get_user, email)
+        usage_doc = await asyncio.to_thread(MongoDB.get_usage, email)
         if user:
             counts = usage_doc.get("counts", {}) if usage_doc else {}
             sub_level = "lifetime" if email in ADMIN_EMAILS else user.get("subscription_level", "free")
@@ -207,7 +207,7 @@ async def start_bot(bot_id: str, config: BotConfig):
         raise HTTPException(status_code=404, detail="Bot not found")
     
     # Check User & Subscription logic merged with Guest check
-    user = await MongoDB.get_user(email)
+    user = await asyncio.to_thread(MongoDB.get_user, email)
     if not user:
         raise HTTPException(status_code=401, detail="Please login/register to use the bots.")
 
@@ -221,7 +221,7 @@ async def start_bot(bot_id: str, config: BotConfig):
 
     # Check App Limits for Free Tier (Admins bypass all limits)
     if email not in ADMIN_EMAILS and sub_level == "free":
-        usage_doc = await MongoDB.get_usage(email)
+        usage_doc = await asyncio.to_thread(MongoDB.get_usage, email)
         if usage_doc:
             current_count = usage_doc.get("counts", {}).get(bot_id, 0)
             if current_count >= 10:
@@ -231,7 +231,7 @@ async def start_bot(bot_id: str, config: BotConfig):
                 )
     
     # Load User Settings
-    user_settings = await MongoDB.get_settings(email) or {}
+    user_settings = await asyncio.to_thread(MongoDB.get_settings, email) or {}
     
     # Merge config with stored settings if fields are empty
     roles = config.roles or user_settings.get("PREFERRED_ROLES", "").split(",")
@@ -410,7 +410,7 @@ async def notify_apply(email: str = Body(..., embed=True), bot_id: str = Body(..
         job_data["Status"] = "Success"
         job_data["Scraped At"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         job_data["platform"] = bot_id
-        await MongoDB.add_application(email, job_data)
+        await asyncio.to_thread(MongoDB.add_application, email, job_data)
         return {"status": "synced"}
     except Exception as e:
         logger.error(f"Sync error: {e}")
@@ -425,7 +425,7 @@ async def get_data(data_id: str, email: str):
     path = user_storage / "data" / f"{data_id}_applied.xlsx"
 
     try:
-        data = await MongoDB.get_applications(email, data_id)
+        data = await asyncio.to_thread(MongoDB.get_applications, email, data_id)
         return {"data": data}
     except Exception as e:
         logger.error(f"Error loading {data_id} data for {email}: {e}")
@@ -453,10 +453,19 @@ async def delete_data(data_id: str, email: str):
 async def get_settings(email: str):
     return await load_user_settings(email)
 
+class SettingsUpdateRequest(BaseModel):
+    email: str
+    data: dict
+
 @app.post("/api/settings")
-async def update_settings(email: str = Body(..., embed=True), data: dict = Body(..., embed=True)):
-    await save_user_settings(email, data)
-    return {"status": "saved"}
+async def update_settings(req: SettingsUpdateRequest):
+    try:
+        print(f"[DEBUG] Received settings update for {req.email}")
+        await save_user_settings(req.email, req.data)
+        return {"status": "saved"}
+    except Exception as e:
+        print(f"[ERROR] Failed to update settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Initialize processor once
 resume_processor = ResumeProcessor()
@@ -505,7 +514,7 @@ async def register_user(identity: UserIdentity):
         email = identity.email.lower().strip()
         print(f"[AUTH] Registering user: {email}")
         
-        existing_user = await MongoDB.get_user(email)
+        existing_user = await asyncio.to_thread(MongoDB.get_user, email)
         if existing_user:
             print(f"[AUTH] User {email} already exists")
             raise HTTPException(status_code=400, detail="User already exists. Please login.")
@@ -513,7 +522,7 @@ async def register_user(identity: UserIdentity):
         print(f"[AUTH] Registering user: {email}")
         hashed_password = get_password_hash(identity.password)
         print(f"[AUTH] Hashed password for {email}, calling create_user...")
-        user = await MongoDB.create_user(email, hashed_password)
+        user = await asyncio.to_thread(MongoDB.create_user, email, hashed_password)
         print(f"[AUTH] create_user result: {bool(user)}")
         if not user:
              print(f"[AUTH] Database error creating user {email}. MongoDB.create_user returned None.")
@@ -521,7 +530,7 @@ async def register_user(identity: UserIdentity):
         
         print(f"[AUTH] User {email} registered successfully")
         # Return user profile for auto-login
-        usage_doc = await MongoDB.get_usage(email)
+        usage_doc = await asyncio.to_thread(MongoDB.get_usage, email)
         counts = usage_doc.get("counts", {}) if usage_doc else {}
         
         return {
@@ -551,14 +560,14 @@ async def google_login(req: GoogleAuthRequest):
         
         email = idinfo['email'].lower().strip()
         print(f"[AUTH] Google Token verified for: {email}")
-        user = await MongoDB.get_user(email)
+        user = await asyncio.to_thread(MongoDB.get_user, email)
         
         if not user:
             # Auto-register google users
-            user = await MongoDB.create_user(email, source="google")
+            user = await asyncio.to_thread(MongoDB.create_user, email, source="google")
             
         sub_level = "lifetime" if email in ADMIN_EMAILS else user.get("subscription_level", "free")
-        usage_doc = await MongoDB.get_usage(email)
+        usage_doc = await asyncio.to_thread(MongoDB.get_usage, email)
         counts = usage_doc.get("counts", {}) if usage_doc else {}
         
         return {
@@ -612,12 +621,12 @@ async def github_login(req: GithubAuthRequest):
             raise HTTPException(status_code=400, detail="Failed to retrieve GitHub email")
 
         email = email.lower().strip()
-        user = await MongoDB.get_user(email)
+        user = await asyncio.to_thread(MongoDB.get_user, email)
         if not user:
-            user = await MongoDB.create_user(email, source="github")
+            user = await asyncio.to_thread(MongoDB.create_user, email, source="github")
 
         sub_level = "lifetime" if email in ADMIN_EMAILS else user.get("subscription_level", "free")
-        usage_doc = await MongoDB.get_usage(email)
+        usage_doc = await asyncio.to_thread(MongoDB.get_usage, email)
         counts = usage_doc.get("counts", {}) if usage_doc else {}
 
         return {
@@ -631,7 +640,7 @@ async def github_login(req: GithubAuthRequest):
 async def identify_user(identity: UserIdentity):
     email = identity.email.lower().strip()
     print(f"[AUTH] identify_user called for: {email}")
-    user = await MongoDB.get_user(email)
+    user = await asyncio.to_thread(MongoDB.get_user, email)
     print(f"[AUTH] User lookup result: {'Found' if user else 'Not Found'}")
     
     # Special case for Admin
@@ -640,9 +649,9 @@ async def identify_user(identity: UserIdentity):
         if not identity.password or identity.password != ADMIN_PASSWORD:
             raise HTTPException(status_code=401, detail="Incorrect Admin Password")
         if not user:
-            user = await MongoDB.create_user(email, source="local") # Admins usually local
-            await MongoDB.update_subscription(email, "lifetime")
-            user = await MongoDB.get_user(email)
+            user = await asyncio.to_thread(MongoDB.create_user, email, source="local") # Admins usually local
+            await asyncio.to_thread(MongoDB.update_subscription, email, "lifetime")
+            user = await asyncio.to_thread(MongoDB.get_user, email)
     else:
         # Standard user login
         if not user:
@@ -665,7 +674,7 @@ async def identify_user(identity: UserIdentity):
     
     print(f"[AUTH] Login successful for: {email}")
     
-    usage_doc = await MongoDB.get_usage(email)
+    usage_doc = await asyncio.to_thread(MongoDB.get_usage, email)
     counts = usage_doc.get("counts", {}) if usage_doc else {}
     sub_level = "lifetime" if email in ADMIN_EMAILS else user.get("subscription_level", "free")
     
@@ -683,7 +692,7 @@ async def identify_user(identity: UserIdentity):
 @app.post("/api/forgot-password")
 async def forgot_password(req: UserIdentity):
     email = req.email.lower().strip()
-    user = await MongoDB.get_user(email)
+    user = await asyncio.to_thread(MongoDB.get_user, email)
     if not user:
         # Don't reveal if user exists for security
         return {"status": "success", "message": "If this email is registered, a reset link will be sent."}
@@ -829,10 +838,10 @@ async def verify_payment(payment: PaymentVerification):
         logger.info(f"[PAYMENT] Signature verified successfully for {payment.email}")
 
         # Update User Subscription
-        user = await MongoDB.get_user(payment.email)
+        user = await asyncio.to_thread(MongoDB.get_user, payment.email)
         if not user:
             # If user somehow doesn't exist during payment, create them (shouldn't happen but safe)
-            await MongoDB.create_user(payment.email, source="payment_system")
+            await asyncio.to_thread(MongoDB.create_user, payment.email, source="payment_system")
             
         expiry = None
         now = datetime.utcnow()
@@ -843,7 +852,7 @@ async def verify_payment(payment: PaymentVerification):
         elif payment.plan == "lifetime":
             expiry = now + timedelta(days=36500) # ~100 years
             
-        await MongoDB.update_subscription(payment.email, payment.plan, expiry)
+        await asyncio.to_thread(MongoDB.update_subscription, payment.email, payment.plan, expiry)
         logger.info(f"[PAYMENT] Subscription updated to {payment.plan} for {payment.email}. Expiry: {expiry}")
         
         return {"status": "success", "subscription": payment.plan, "expiry": expiry}
@@ -857,7 +866,7 @@ async def verify_payment(payment: PaymentVerification):
 
 @app.post("/api/admin/increment-count")
 async def increment_count(req: PlatformCountRequest):
-    await MongoDB.increment_usage(req.email, req.platform)
+    await asyncio.to_thread(MongoDB.increment_usage, req.email, req.platform)
     return {"status": "updated"}
 
 if __name__ == "__main__":

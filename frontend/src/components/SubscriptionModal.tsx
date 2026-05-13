@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Check, Zap, Crown, ShieldCheck } from 'lucide-react';
+import { Zap, Crown, ShieldCheck, Check, Sparkles, X, RefreshCw, ArrowRight, Lock, Target } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import API_BASE from '../config';
-
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -17,41 +17,51 @@ interface RazorpayResponse {
 }
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, email }) => {
-  const [loading, setLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const plans = [
     {
       id: 'monthly',
       name: 'Monthly Pro',
       price: '₹1',
+      originalPrice: '₹49',
       tagline: '2-Day Trial then ₹29/mo',
-      features: ['₹1 for 2 days Trial', 'Then ₹29/month Autopay', 'Unlimited Applies', 'Cancel Anytime'],
-      icon: <Zap className="w-6 h-6 text-[#1C4670]" />,
-      color: 'navy'
+      description: 'Rapid testing of autonomous engines.',
+      features: ['₹1 for 2 days Trial', 'Unlimited Bot Usage', 'Real-time Tracking', 'Global Search'],
+      icon: <Zap className="w-4 h-4 text-[#1C4670]" />,
+      gradient: 'from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50',
+      btnColor: 'bg-[#1C4670]'
     },
     {
       id: 'yearly',
       name: 'Yearly Elite',
       price: '₹399',
-      tagline: 'Save 40% Today',
-      features: ['Priority Application', 'Real-time Tracking', 'Premium Support', 'Featured Profile'],
-      icon: <Crown className="w-6 h-6 text-[#FFA229]" />,
-      color: 'orange',
-      popular: true
+      originalPrice: '₹999',
+      tagline: 'Save 60% Today',
+      description: 'The definitive career acceleration choice.',
+      features: ['Priority Bot Speed', 'Advanced AI Filters', 'Dedicated Intelligence', 'Featured Status'],
+      icon: <Crown className="w-4 h-4 text-[#FFA229]" />,
+      gradient: 'from-[#FFA229]/5 to-[#FFA229]/10',
+      btnColor: 'bg-[#FFA229]',
+      popular: true,
+      saveBadge: 'Best Value'
     },
     {
       id: 'lifetime',
       name: 'Lifetime Master',
       price: '₹799',
+      originalPrice: '₹2499',
       tagline: 'Ultimate Job Security',
-      features: ['All Exclusive Features', 'Lifetime Access', '24/7 Priority Support', 'Dedicated Bot Cluster'],
-      icon: <ShieldCheck className="w-6 h-6 text-[#1C4670]" />,
-      color: 'navy'
+      description: 'Eternal access to all modules.',
+      features: ['All Exclusive Features', 'Lifetime Node Access', 'Priority API Cluster', 'Multi-Device Sync'],
+      icon: <ShieldCheck className="w-4 h-4 text-[#1C4670]" />,
+      gradient: 'from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50',
+      btnColor: 'bg-[#1C4670]'
     }
   ];
 
   const handlePayment = async (planId: string) => {
-    setLoading(true);
+    setLoadingPlan(planId);
     try {
       const configRes = await fetch(`${API_BASE}/config`);
       const configData = await configRes.json();
@@ -82,12 +92,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
           const result = await verifyRes.json();
           if (result.status === 'success') {
             localStorage.setItem('user_sub', planId);
-            alert(planId === 'monthly' ? 'Trial Activated! Autopay scheduled.' : 'Subscription Activated!');
             onClose();
             window.location.reload();
           }
         },
-        prefill: { email },
+        prefill: { email: email },
         theme: { color: "#1C4670" }
       };
 
@@ -95,91 +104,150 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
         options.subscription_id = order.id;
       } else {
         options.order_id = order.id;
-        options.amount = order.amount;
-        options.currency = "INR";
       }
 
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
     } catch (err) {
       console.error(err);
-      alert('Payment initialization failed');
     } finally {
-      setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-[#0f172a] rounded-[40px] shadow-2xl w-full max-w-5xl overflow-hidden relative animate-in fade-in zoom-in duration-300 border border-slate-200 dark:border-white/10">
-        <button onClick={onClose} className="absolute top-8 right-8 p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-2xl transition-all group z-10">
-          <X className="w-6 h-6 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-colors" />
-        </button>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-[#0a0d14]/90 backdrop-blur-2xl"
+          />
 
-        <div className="p-8 md:p-12 text-center relative overflow-hidden">
-          {/* Decorative background glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-gradient-to-b from-[#1C4670]/5 to-transparent pointer-events-none" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-white/10 flex flex-col"
+          >
+            <button
+              onClick={onClose}
+              className="absolute top-6 right-6 p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all group z-50 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900"
+            >
+              <X className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
+            </button>
 
-          <h2 className="text-4xl md:text-5xl font-black text-[#1C4670] dark:text-white mb-4 tracking-tighter uppercase">Level Up Your Career! 🚀</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-lg mb-12 max-w-2xl mx-auto font-medium">You've reached your free limit. Unlock unlimited job applications and land your dream job faster with our premium membership.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative p-8 rounded-[32px] border-2 transition-all duration-500 transform hover:-translate-y-2 flex flex-col ${plan.popular
-                    ? 'border-[#1C4670] bg-[#FFF2E5]/30 dark:bg-[#1C4670]/10 shadow-2xl shadow-[#1C4670]/10'
-                    : 'border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900/50 hover:border-[#FFA229]/30'
-                  }`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-primary text-white text-[10px] font-bold px-6 py-2 rounded-full uppercase tracking-widest shadow-xl shadow-brand-primary/30 border border-white/20">Most Popular</span>
-                )}
-                <div className="mb-6 inline-flex items-center justify-center w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-white/5">
-                  {plan.icon}
-                </div>
-                <h3 className="text-xl font-black text-[#1C4670] dark:text-white mb-1 uppercase tracking-tight">{plan.name}</h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#FFA229] mb-6">{plan.tagline}</p>
-
-                <div className="flex flex-col items-center mb-8">
-                  <div className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">{plan.price}</div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">One Time / Recurring</div>
-                </div>
-
-                <ul className="space-y-4 mb-10 text-left flex-1">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-tight">
-                      <div className={`mr-3 p-1 rounded-full ${plan.popular ? 'bg-[#1C4670] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
-                        <Check className="w-3 h-3" />
-                      </div>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  disabled={loading}
-                  onClick={() => handlePayment(plan.id)}
-                  className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl active:scale-95 ${plan.popular
-                      ? 'bg-[#FFA229] text-white hover:bg-[#FFB34D] shadow-[#FFA229]/25 hover:shadow-[#FFA229]/40'
-                      : 'bg-[#1C4670] text-white hover:bg-[#2A6BA3] shadow-[#1C4670]/25'
-                    } disabled:opacity-50`}
+            <div className="flex-1 overflow-y-auto no-scrollbar p-8 sm:p-10 lg:p-12 text-center">
+              <div className="relative z-10 mb-10">
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="inline-flex items-center gap-2 px-3 py-1 bg-[#FFA229]/10 rounded-full border border-[#FFA229]/20 mb-4"
                 >
-                  {loading ? 'Processing...' : 'Get Started Now'}
-                </button>
-              </div>
-            ))}
-          </div>
+                  <Sparkles className="w-3 h-3 text-[#FFA229]" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#FFA229]">Enterprise Access</span>
+                </motion.div>
 
-          <div className="mt-12 flex items-center justify-center gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-            <ShieldCheck className="w-5 h-5 text-[#1C4670]" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Safe & Secure UPI Payments Powered by Razorpay</p>
-          </div>
+                <h2 className="text-3xl sm:text-4xl font-black text-[#1C4670] dark:text-white mb-3 tracking-tighter uppercase leading-none italic">
+                  Scale Your <span className="logo-karo-gradient">Efficiency</span>
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] max-w-sm mx-auto font-black uppercase tracking-widest opacity-60 leading-relaxed">
+                  Select your intelligence tier and synchronize your career.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 max-w-5xl mx-auto items-stretch">
+                {plans.map((plan, idx) => (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`relative p-6 rounded-[2rem] glass-card border flex flex-col h-full bg-white dark:bg-white/[0.01] transition-all duration-300 group
+                    ${plan.popular
+                        ? 'border-[#FFA229]/40 shadow-2xl scale-[1.02] z-20'
+                        : 'border-slate-200/50 dark:border-white/5 shadow-xl hover:border-[#1C4670]/30'
+                      }`}
+                  >
+                    {plan.popular && (
+                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-30">
+                        <span className="bg-gradient-to-r from-[#FF8C42] to-[#FFA229] text-white text-[8px] font-black px-5 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
+                          Best Value
+                        </span>
+                      </div>
+                    )}
+
+                    <div className={`mb-6 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} border border-slate-200 dark:border-white/10 shadow-md group-hover:scale-105 transition-transform`}>
+                      {plan.icon}
+                    </div>
+
+                    <div className="text-left mb-6">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{plan.name}</h3>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">{plan.price}</span>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 line-through opacity-40">{plan.originalPrice}</span>
+                        </div>
+                      </div>
+                      <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1.5">{plan.tagline}</p>
+                      <p className="mt-3 text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed italic opacity-70">{plan.description}</p>
+                    </div>
+
+                    <div className="flex-1 space-y-4 mb-8 text-left">
+                      <ul className="space-y-3">
+                        {plan.features.map((f, i) => (
+                          <li key={i} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                            <div className="w-4 h-4 rounded-md bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                              <Check className="w-2.5 h-2.5 text-emerald-500" />
+                            </div>
+                            <span className="uppercase tracking-tight opacity-90">{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      disabled={loadingPlan !== null}
+                      onClick={() => handlePayment(plan.id)}
+                      className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn
+                      ${plan.popular
+                          ? 'bg-[#FFA229] text-white shadow-xl shadow-orange-500/20'
+                          : 'bg-[#1C4670] text-white shadow-lg shadow-slate-900/10'
+                        } disabled:opacity-50 active:scale-95 hover:shadow-2xl`}
+                    >
+                      {loadingPlan === plan.id ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <span className="relative z-10">{plan.id === 'monthly' ? 'Start Trial' : 'Get Access'}</span>
+                          <ArrowRight className="w-3.5 h-3.5 relative z-10 group-hover/btn:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="mt-12 flex items-center justify-center gap-10 opacity-30">
+                {[
+                  { icon: Lock, text: 'SSL Encrypted' },
+                  { icon: ShieldCheck, text: 'Neural Gateway' },
+                  { icon: Target, text: 'Instant Sync' }
+                ].map((trust, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <trust.icon className="w-4 h-4 text-slate-400" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{trust.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 };
 
