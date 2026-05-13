@@ -348,9 +348,10 @@ const App: React.FC = () => {
 
       {/* Sidebar - Responsive Drawer */}
       <aside className={`
-        fixed lg:relative inset-y-0 left-0 w-80 bg-white/80 dark:bg-[#0a0d14]/80 backdrop-blur-3xl border-r border-slate-200/50 dark:border-white/5 flex flex-col z-[80] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0
+        fixed lg:relative inset-y-0 left-0 w-[85%] sm:w-80 bg-white/80 dark:bg-[#0a0d14]/80 backdrop-blur-3xl border-r border-slate-200/50 dark:border-white/5 flex flex-col z-[80] transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.3)]' : '-translate-x-full lg:translate-x-0'}
       `}>
+
         {/* Sidebar Header: Logo */}
         <div className="p-6 pb-2">
           <div className="flex items-center gap-4 mb-6 group">
@@ -514,7 +515,8 @@ const App: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className={`flex-1 relative overflow-auto custom-scrollbar bg-slate-50 dark:bg-transparent ${location.pathname === '/browser' ? 'pt-0' : 'pt-16 lg:pt-0'}`}>
+      <main className={`flex-1 relative overflow-auto custom-scrollbar bg-slate-50 dark:bg-transparent ${location.pathname === '/browser' ? 'pt-0' : 'pt-24 lg:pt-0'}`}>
+
         {location.pathname !== '/browser' && (
           <header className="hidden lg:flex sticky top-0 w-full h-14 bg-white/70 dark:bg-[#0a0d14]/70 backdrop-blur-2xl border-b border-slate-200/50 dark:border-white/5 items-center justify-between px-8 z-40 transition-colors duration-300">
             <div className="flex items-center gap-4">
@@ -589,8 +591,9 @@ const App: React.FC = () => {
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-white/95 dark:bg-[#0a0f1e]/95 w-full max-w-md rounded-[2rem] shadow-[0_32px_60px_rgba(0,0,0,0.4)] border border-slate-200/50 dark:border-white/5 overflow-hidden relative backdrop-blur-xl"
+              className="bg-white/95 dark:bg-[#0a0f1e]/95 w-full max-w-md rounded-3xl sm:rounded-[2rem] shadow-[0_32px_60px_rgba(0,0,0,0.4)] border border-slate-200/50 dark:border-white/5 overflow-hidden relative backdrop-blur-xl"
             >
+
 
               {/* Subtle Texture Overlay */}
               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
@@ -603,7 +606,8 @@ const App: React.FC = () => {
                 <X className="w-5 h-5 text-slate-400 group-hover:text-rose-500" />
               </button>
 
-              <div className="p-8 pt-10 relative z-10">
+              <div className="p-6 sm:p-8 pt-10 relative z-10">
+
                 <div className="flex flex-col items-center text-center mb-8">
                   <motion.div 
                     whileHover={{ scale: 1.05 }}

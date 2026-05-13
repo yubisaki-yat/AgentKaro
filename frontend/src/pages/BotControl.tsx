@@ -133,18 +133,18 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
 
                </div>
 
-               <div className="flex items-center gap-4">
+               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   {!email ? (
                      <button
                         onClick={() => window.dispatchEvent(new CustomEvent('open-login'))}
-                        className="px-6 py-3 bg-[#1C4670] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-[#1C4670]/20 hover:scale-105 transition-all flex items-center gap-2.5"
+                        className="px-6 py-3 bg-[#1C4670] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-[#1C4670]/20 hover:scale-105 transition-all flex items-center gap-2.5 flex-1 sm:flex-none justify-center"
                      >
                         <Play className="w-3 h-3" /> Sign In to Launch
                      </button>
                   ) : running ? (
                      <button
                         onClick={handleStop}
-                        className="px-6 py-3 bg-rose-500 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-105 transition-all flex items-center gap-2.5"
+                        className="px-6 py-3 bg-rose-500 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-105 transition-all flex items-center gap-2.5 flex-1 sm:flex-none justify-center"
                      >
                         <Square className="w-3 h-3" /> Terminate Bot
                      </button>
@@ -152,12 +152,13 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
                      <button
                         onClick={handleStart}
                         disabled={botId === 'company_crawler' && subscription === 'free'}
-                        className={`px-6 py-3 bg-[#FFA229] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-[#FFA229]/20 hover:scale-105 transition-all flex items-center gap-2.5 ${botId === 'company_crawler' && subscription === 'free' ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                        className={`px-6 py-3 bg-[#FFA229] text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-[#FFA229]/20 hover:scale-105 transition-all flex items-center gap-2.5 flex-1 sm:flex-none justify-center ${botId === 'company_crawler' && subscription === 'free' ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                      >
                         <Play className="w-3 h-3" /> {botId === 'company_crawler' && subscription === 'free' ? 'PRO Only' : 'Launch Master'}
                      </button>
                   )}
                </div>
+
 
             </div>
          </div>
@@ -428,7 +429,8 @@ const BotControl: React.FC<BotControlProps> = ({ botId, title, icon: Icon, color
             </div>
 
             {/* Terminal Panel */}
-            <div className="xl:col-span-2 flex flex-col h-[600px] bg-[#0a0f1c] rounded-3xl border border-slate-800 shadow-2xl overflow-hidden relative group">
+            <div className="xl:col-span-2 flex flex-col h-[400px] lg:h-[600px] bg-[#0a0f1c] rounded-3xl border border-slate-800 shadow-2xl overflow-hidden relative group">
+
                {/* Terminal Header macOS style */}
                <div className="h-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 absolute top-0 w-full z-20">
                   <div className="flex items-center gap-2">

@@ -131,8 +131,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-white/10 flex flex-col"
+            className="relative bg-white dark:bg-[#0f172a] rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-white/10 flex flex-col"
           >
+
             <button
               onClick={onClose}
               className="absolute top-6 right-6 p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all group z-50 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900"
@@ -140,7 +141,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               <X className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
             </button>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar p-8 sm:p-10 lg:p-12 text-center">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-10 lg:p-12 text-center">
+
               <div className="relative z-10 mb-10">
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}

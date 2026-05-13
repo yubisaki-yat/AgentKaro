@@ -195,9 +195,10 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription, status }) =>
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 lg:space-y-12 max-w-[1600px] mx-auto pb-32">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-12 max-w-[1600px] mx-auto pb-32">
       {/* Hero Stats Section */}
-      <div className="relative p-8 sm:p-12 glass-card overflow-hidden group border border-slate-200/50 dark:border-white/5 shadow-xl">
+      <div className="relative p-6 sm:p-12 glass-card overflow-hidden group border border-slate-200/50 dark:border-white/5 shadow-xl">
+
         {/* Abstract background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#1C4670] via-transparent to-[#FFA229] opacity-[0.02]" />
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-[#FFA229]/5 blur-[120px] rounded-full group-hover:opacity-10 transition-opacity" />
@@ -214,11 +215,12 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription, status }) =>
             </motion.div>
 
             <div className="space-y-1">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-[0.9]">
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight uppercase leading-[0.9]">
                 Mission <span className="logo-karo-gradient">Control</span>
               </h1>
-              <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.5em] pl-1">Autonomic Intelligence v3.0</p>
+              <p className="text-slate-400 dark:text-slate-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] pl-1">Autonomic Intelligence v3.0</p>
             </div>
+
           </div>
 
           <div className="flex flex-wrap items-center gap-4">

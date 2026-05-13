@@ -78,7 +78,7 @@ const AIJobSearch: React.FC<AIJobSearchProps> = ({ subscription, onUpgrade }) =>
          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
             <motion.div 
               whileHover={{ y: -5 }}
-              className={`glass-card p-10 border border-slate-200/50 dark:border-white/5 relative overflow-hidden transition-all shadow-xl ${!isPremium ? 'opacity-40 grayscale pointer-events-none' : 'hover:shadow-2xl'}`}
+              className={`glass-card p-8 md:p-10 border border-slate-200/50 dark:border-white/5 relative overflow-hidden transition-all shadow-xl ${!isPremium ? 'opacity-40 grayscale pointer-events-none' : 'hover:shadow-2xl'}`}
             >
                <div className="absolute top-0 left-0 w-1.5 h-full bg-[#1C4670]" />
                <div className="flex items-center gap-4 mb-6">
@@ -94,8 +94,9 @@ const AIJobSearch: React.FC<AIJobSearchProps> = ({ subscription, onUpgrade }) =>
 
             <motion.div 
               whileHover={{ y: -5 }}
-              className={`glass-card p-10 border border-slate-200/50 dark:border-white/5 relative overflow-hidden transition-all shadow-xl ${!isPremium ? 'opacity-40 grayscale pointer-events-none' : 'hover:shadow-2xl'}`}
+              className={`glass-card p-8 md:p-10 border border-slate-200/50 dark:border-white/5 relative overflow-hidden transition-all shadow-xl ${!isPremium ? 'opacity-40 grayscale pointer-events-none' : 'hover:shadow-2xl'}`}
             >
+
                <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500" />
                <div className="flex items-center gap-4 mb-6">
                  <div className="p-3 bg-emerald-500/10 rounded-2xl">
