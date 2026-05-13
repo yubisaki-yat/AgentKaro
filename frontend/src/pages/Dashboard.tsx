@@ -37,12 +37,13 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, color, dela
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.5, ease: "easeOut" }}
     whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group border border-slate-200/50 dark:border-white/5 shadow-sm hover:shadow-xl transition-all"
+    className="glass-card p-5 flex flex-col gap-3 relative overflow-hidden group border border-slate-200/50 dark:border-white/5 shadow-sm hover:shadow-xl transition-all"
   >
     <div className="flex items-center justify-between relative z-10">
-      <div className={`p-3 rounded-2xl bg-gradient-to-br ${color} text-white shadow-lg shadow-black/5`}>
-        <Icon className="w-5 h-5" />
+      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${color} text-white shadow-lg shadow-black/5`}>
+        <Icon className="w-4 h-4" />
       </div>
+
       {trend && (
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-emerald-500/20">
           <TrendingUp className="w-3 h-3" />
@@ -54,13 +55,14 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon: Icon, color, dela
     <div className="relative z-10">
       <p className="text-[9px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-1.5">{title}</p>
       {loading ? (
-        <Skeleton className="h-8 w-24 rounded-lg" />
+        <Skeleton className="h-7 w-20 rounded-lg" />
       ) : (
         <div className="flex items-baseline gap-2">
-          <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">{value}</p>
-          <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-[#FFA229] transition-colors" />
+          <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">{value}</p>
+          <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#FFA229] transition-colors" />
         </div>
       )}
+
     </div>
 
     <div className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br ${color} opacity-[0.03] blur-[30px] rounded-full group-hover:scale-125 transition-transform duration-500`} />
@@ -257,9 +259,10 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription, status }) =>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative p-1 bg-gradient-to-br from-brand-secondary via-[#FF6B6B] to-brand-accent rounded-[3.5rem] shadow-2xl"
+            className="relative p-0.5 bg-gradient-to-br from-brand-secondary via-[#FF6B6B] to-brand-accent rounded-[2.5rem] shadow-2xl"
           >
-            <div className="bg-[#0f172a] rounded-[3.4rem] p-10 sm:p-14 relative overflow-hidden">
+            <div className="bg-[#0f172a] rounded-[2.4rem] p-8 sm:p-10 relative overflow-hidden">
+
               {/* Abstract glows */}
               <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-secondary/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
               <div className="absolute bottom-0 left-0 w-80 h-80 bg-brand-accent/5 blur-[100px] rounded-full" />
@@ -267,14 +270,15 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription, status }) =>
               <div className="relative z-10 flex flex-col lg:flex-row items-center gap-14">
                 <div className="flex-1 space-y-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-brand-secondary/20 rounded-3xl flex items-center justify-center border border-brand-secondary/30">
-                      <Zap className="w-7 h-7 text-brand-secondary" />
+                    <div className="w-12 h-12 bg-brand-secondary/20 rounded-2xl flex items-center justify-center border border-brand-secondary/30">
+                      <Zap className="w-6 h-6 text-brand-secondary" />
                     </div>
                     <div>
-                      <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tighter uppercase italic leading-none">Neural <span className="text-brand-secondary">Throttling</span></h3>
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Resource Management Active</p>
+                      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">Neural <span className="text-brand-secondary">Throttling</span></h3>
+                      <p className="text-[9px] font-black uppercase tracking-[0.3em] mt-1.5 opacity-50">Resource Management Active</p>
                     </div>
                   </div>
+
 
                   <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg">
                     {subscription === 'free'
@@ -297,12 +301,13 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription, status }) =>
                 <div className="w-full lg:w-96 p-8 bg-white/5 rounded-[2.5rem] border border-white/10 backdrop-blur-3xl space-y-8">
                   <div className="flex justify-between items-end">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Application Quota</span>
-                      <span className="text-5xl font-black text-white tracking-tighter leading-none">
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Application Quota</span>
+                      <span className="text-4xl font-black text-white tracking-tighter leading-none">
                         {data.internshala.length + data.naukri.length}
-                        <span className="text-xl text-slate-600 ml-2">/ 10</span>
+                        <span className="text-lg text-slate-600 ml-2">/ 10</span>
                       </span>
                     </div>
+
                     <div className="text-right">
                       <div className={`px-4 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest ${subscription !== 'free' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-brand-secondary/10 border-brand-secondary/20 text-brand-secondary'}`}>
                         {subscription !== 'free' ? 'Unlimited' : 'Limited'}
@@ -437,8 +442,9 @@ const Dashboard: React.FC<DashboardProps> = ({ email, subscription, status }) =>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="glass-card p-10 border-none shadow-2xl relative overflow-hidden"
+            className="glass-card p-8 border-none shadow-2xl relative overflow-hidden"
           >
+
             {/* Background pattern */}
             <div className="absolute inset-0 bg-slate-900/[0.02] dark:bg-white/[0.02] pointer-events-none" />
             <div className="absolute top-0 right-0 w-40 h-40 bg-brand-secondary/5 blur-[50px] rounded-full translate-x-1/2 -translate-y-1/2" />

@@ -8,10 +8,11 @@
   --color-brand-secondary: #FFA229;
   --color-brand-accent: #00A8FF;
   --color-brand-danger: #FF6B6B;
-  --color-bg-dark: #0a0d14;
-  --color-card-dark: #121826;
+  --color-bg-dark: #020617;
+  --color-card-dark: #0a0f1e;
   --color-text-soft: #94A3B8;
 }
+
 
 @layer base {
   body {
@@ -105,5 +106,28 @@
 
   .text-fill-transparent {
     -webkit-text-fill-color: transparent;
+  }
+
+  .mesh-gradient {
+    background-color: hsla(220, 20%, 5%, 1);
+    background-image:
+      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0.1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0.1) 0, transparent 50%);
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .input-focus-ring {
+    @apply focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-300;
   }
 }
